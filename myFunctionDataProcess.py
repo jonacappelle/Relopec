@@ -75,35 +75,35 @@ def FilterFundamental(f=None,Ts=None,Iabc=None,Vabc=None,t=None,*args,**kwargs):
 
     I_trans=zeros(3,length(t))
     V_trans=zeros(3,length(t))
-    tn=t[int(wd),:]
+    tn=t[wd-1:]
 
     for n in np.arange(0,length(tn)-1,1):
 
         # Current
-        I_wd=Iabc[:,n:wd+n]
-        y=fft(transpose(I_wd))
-        ytrans=zeros(length(I_wd),3)
-        print("ytrans shape")
-        print(ytrans.shape)
+        I_wd=Iabc[:,n:wd+n+1]
+        y=fft(transpose(I_wd), axis=0)
+        ytrans=zeros(length(I_wd[0]),3)
+        ytrans = ytrans.astype('complex64')
 
-        ytrans[4:100,:]=y[4:100,:]
-        ytrans[-1 - 99, -1 - 3,:]=y[-1 - 99,-1 - 3,:]
-        Itr_wd=ifft(ytrans).real
-        I_trans[:,(n+round(wd/2))]=transpose(Itr_wd[round(wd/2),:])
+        ytrans[3:100,:]=y[3:100,:]
+        ytrans[-1-99: -1-2,:]=y[-1-99:-1-2,:]
+        Itr_wd=ifft(ytrans, axis=0).real
+        I_trans[:,(n+round(wd/2))]=transpose(Itr_wd[round(wd/2)-1,:])
 
         # Voltage
-        V_wd=Vabc[:,n:wd+n]
-        y=fft(transpose(V_wd))
-        ytrans=zeros(length(V_wd),3)
-        ytrans[4:190,:]=y[4:190,:]
-        ytrans[-1 - 189,-1 - 3,:]=y[-1 - 189,-1 - 3,:]
-        Vtr_wd=ifft(ytrans).real
-        V_trans[:,(n + round(wd / 2))]=transpose(Vtr_wd[round(wd / 2),:])
+        V_wd=Vabc[:,n:wd+n+1]
+        y=fft(transpose(V_wd), axis=0)
+        ytrans=zeros(length(V_wd[0]),3)
+        ytrans = ytrans.astype('complex64')
+
+        ytrans[3:190,:]=y[3:190,:]
+        ytrans[-1-189:-1-2,:]=y[-1-189:-1-2,:]
+        Vtr_wd=ifft(ytrans, axis=0).real
+        V_trans[:,(n+round(wd/2))]=transpose(Vtr_wd[round(wd/2)-1,:])
     
-    I_trans=I_trans[:,wd:]
-    
-    V_trans=V_trans[:,wd:]
-    tn=t[wd,:]
+    I_trans=I_trans[:,wd-1:]
+    V_trans=V_trans[:,wd-1:]
+    tn=t[wd-1:]
 
     return I_trans,V_trans,tn
     

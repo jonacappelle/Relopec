@@ -39,18 +39,18 @@ def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*a
     indexExecute=0
     estFaultType=0
 
-    for k in np.arange(wd,length(t),1):
-        wdI=IabcForm[k-wd+1:k+1,:]
-        wdV=VabcForm[k-wd+1:k+1,:]
-        Ifft=fft(wdI)
-        temp=np.absolute(Ifft)
+    for k in np.arange(wd+1,length(t),1):
+        wdI=IabcForm[k-wd:k,:]
+        wdV=VabcForm[k-wd:k,:]
 
-        plt.plot(temp)
-        plt.show()
+        Ifft=fft(wdI, axis=0)
+        Vfft=fft(wdV, axis=0)
 
-        Vfft=fft(wdV)
-        I[k,:]=2*Ifft[1,:]/wd
-        V[k,:]=2*Vfft[1,:]/wd
+        I = I.astype('complex64')
+        V = V.astype('complex64')
+
+        I[k,:]=2.0*Ifft[1,:]/wd
+        V[k,:]=2.0*Vfft[1,:]/wd
 
         Zab=abs((V[k,0] - V[k,1]) / (I[k,0] - I[k,1]))
         Zbc=abs((V[k,1] - V[k,2]) / (I[k,1] - I[k,2]))
@@ -82,7 +82,8 @@ def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*a
                     if Zab > (0.5*Zbase) and Zbc < (0.5*Zbase) and Zca < (0.5*Zbase):
                         estFaultType=3
                     else:
-                        if Zab > (0.5*Zbase) and Zbc(k,2) > (0.5*Zbase) and Zca(k,3) < (0.5*Zbase):
+                        if Zab > (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca< (0.5*Zbase):
+                        # if Zab > (0.5*Zbase) and Zbc[k,2] > (0.5*Zbase) and Zca[k,3]< (0.5*Zbase):
                             estFaultType=4
     
     

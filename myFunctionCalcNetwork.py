@@ -9,45 +9,52 @@
     #methods(Static) 
         # CALCULATING NETWORK PARAMETERS WHEN NOT CONSIDERING CAPACITIVE
         # COUPLING BETWEEN THE TRANSMISSION LINE (PREFERRED OPTION)
-    
-    
+import numpy as np
+import itertools
+from numpy.linalg import multi_dot
+from numpy.linalg import inv
+
+def length(x):
+    return len(x)
+
+def dot(a, b):
+    return np.sum(a.conj()*b, axis=0)
 
 def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C_line=None,Ts=None,tn=None,Lg=None,Rg=None,*args,**kwargs):
-    varargin = NetworkParamNoCap.varargin
-    nargin = NetworkParamNoCap.nargin
 
     #SECTION LINE PARAMETERS 
-            # before the fault
-    L1=dot(k,L_line)
-# myFunctionCalcNetwork.m:12
-    R1=dot(k,R_line)
-# myFunctionCalcNetwork.m:13
+    # before the fault
+    L1=k*L_line
+    R1=k*R_line
+    # after the fault
+    L2=(1-k)*L_line
+    R2=(1 - k)*R_line
     
-    L2=dot((1 - k),L_line)
-# myFunctionCalcNetwork.m:15
-    R2=dot((1 - k),R_line)
-# myFunctionCalcNetwork.m:16
-    
-    i2=copy(I_trans)
-# myFunctionCalcNetwork.m:19
-    for n in arange(2,length(tn),1).reshape(-1):
-        DiIn=(I_trans(arange(),n) - I_trans(arange(),n - 1)) / Ts
-# myFunctionCalcNetwork.m:21
-        vF[arange(),n]=V_trans(arange(),n) - dot(L1,DiIn) - dot(R1,I_trans(arange(),n))
-# myFunctionCalcNetwork.m:22
-    
+    i2=I_trans
+
+    vF = np.zeros((3,len(I_trans[0])))
+
+    for n in np.arange(1,length(tn)-1,1):
+        DiIn=(I_trans[:,n] - I_trans[:,n-1]) / Ts
+        vF[:,n]=V_trans[:,n] - L1*DiIn - R1*I_trans[:,n]
+
+
     #SECOND SECTION (after fault using state space)
-    X=zeros(3,length(tn))
-# myFunctionCalcNetwork.m:26
-    A=dot((- (R2 + Rg) / (L2 + Lg)),eye(3))
-# myFunctionCalcNetwork.m:27
-    B=dot((1 / (L2 + Lg)),concat([[dot((2 / 3),vF(1,arange())) - vF(2,arange()) / 3 - vF(3,arange()) / 3],[- vF(1,arange()) / 3 + dot((2 / 3),vF(2,arange())) - vF(3,arange()) / 3],[- vF(1,arange()) / 3 - vF(2,arange()) / 3 + dot((2 / 3),vF(3,arange()))]]))
-# myFunctionCalcNetwork.m:28
-    I=eye(3)
-# myFunctionCalcNetwork.m:31
-    for n in arange(2,length(tn),1).reshape(-1):
-        X[arange(),n]=dot(((I - dot(A,Ts) / 2) ** (- 1)),(dot((I + dot(A,Ts) / 2),X(arange(),n - 1)) + dot((B(arange(),n) + B(arange(),n - 1)),Ts) / 2))
-# myFunctionCalcNetwork.m:33
+    X=np.zeros((3,length(tn)))
+    A=(- (R2 + Rg) / (L2 + Lg)*np.eye(3))
+    # B=(1 / (L2 + Lg))*((((2/3)*vF[0,:] - vF[1,:]/3 - vF[2,:]/3),((-vF[0,:]/3 + (2/3),vF[1,:] - vF[2,:]/3),(- vF[0,:]/3 - vF[1,:]/3 + (2/3),vF[2,:]))))
+    # temp = np.array([[(2/3)*vF[0,:] - vF[1,:]/3 - vF[2,:]/3],[- vF[0,:]/3 + (2/3)*vF[1,:] - vF[2,:]/3],[- vF[0,:]/3 - vF[1,:]/3 + (2/3)*vF[2,:]]])
+    temp1 = (2/3)*vF[0,:] - vF[1,:]/3 - vF[2,:]/3
+    temp2 = - vF[0,:]/3 + (2/3)*vF[1,:] - vF[2,:]/3
+    temp3 = - vF[0,:]/3 - vF[1,:]/3 + (2/3)*vF[2,:]
+    temp = [temp1, temp2, temp3]
+    # temp = multi_dot(temp)
+    B=np.dot((1 / (L2 + Lg)),temp)
+
+    I=np.eye(3)
+
+    for n in np.arange(1,length(tn),1):
+        X[:,n]= np.dot((inv((I-A*Ts/2))),(   np.dot(((I+A*Ts/2)),(X[:,n-1]))  +   ((B[:,n] + B[:,n-1])*Ts/2)  ))
     
     return vF,i2,X
     
@@ -136,8 +143,6 @@ def NetworkParamWithCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None
     
     return vF,i2,X
     
-if __name__ == '__main__':
-    pass
     
     
     
