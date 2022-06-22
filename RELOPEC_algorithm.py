@@ -20,6 +20,7 @@ import pickle
 
 USE_CACHED_DATA = True
 
+# Global variables
 I_trans = None
 V_trans = None
 k = None
