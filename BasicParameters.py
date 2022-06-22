@@ -55,7 +55,7 @@ Z_line=R_line + 1j*wb*L_line
 remoteR=concat([1.1784337797630415,0.16984155512168936])
 remoteL=concat([0.8492077756084467,0.8492077756084467])
 
-print(remoteR)
+# print(remoteR)
 
 Rg=remoteR[1]
 Lg=remoteL[1] / wb

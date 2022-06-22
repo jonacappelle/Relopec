@@ -9,16 +9,21 @@
     #methods(Static) 
         # CALCULATING NETWORK PARAMETERS WHEN NOT CONSIDERING CAPACITIVE
         # COUPLING BETWEEN THE TRANSMISSION LINE (PREFERRED OPTION)
+from timeit import timeit
 import numpy as np
 import itertools
 from numpy.linalg import multi_dot
 from numpy.linalg import inv
+import timeit
+import time
 
 def length(x):
     return len(x)
 
 def dot(a, b):
     return np.sum(a.conj()*b, axis=0)
+
+
 
 def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C_line=None,Ts=None,tn=None,Lg=None,Rg=None,*args,**kwargs):
 
@@ -34,9 +39,12 @@ def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C
 
     vF = np.zeros((3,len(I_trans[0])))
 
+   
+
     for n in np.arange(1,length(tn)-1,1):
         DiIn=(I_trans[:,n] - I_trans[:,n-1]) / Ts
         vF[:,n]=V_trans[:,n] - L1*DiIn - R1*I_trans[:,n]
+
 
 
     #SECOND SECTION (after fault using state space)
@@ -53,11 +61,19 @@ def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C
 
     I=np.eye(3)
 
+    # start = time.time()
+
     for n in np.arange(1,length(tn),1):
-        X[:,n]= np.dot((inv((I-A*Ts/2))),(   np.dot(((I+A*Ts/2)),(X[:,n-1]))  +   ((B[:,n] + B[:,n-1])*Ts/2)  ))
+        # X[:,n]= np.dot((np.linalg.inv((I-A*Ts/2))),(   np.dot(((I+A*Ts/2)),(X[:,n-1]))  +   ((B[:,n] + B[:,n-1])*Ts/2)  ))
+        X[:,n]= np.dot((np.linalg.inv((I-A*Ts/2))),(   np.dot(((I+A*Ts/2)),(X[:,n-1]))  +   ((B[:,n] + B[:,n-1])*Ts/2)  ))
     
+    # stop = time.time()
+    # print("Calc network")
+    # print(stop-start)
     return vF,i2,X
-    
+
+
+
 if __name__ == '__main__':
     pass
     

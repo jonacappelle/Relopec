@@ -8,49 +8,55 @@ import numpy as np
 from scipy.fft import fft, ifft
 import copy
 import matplotlib.pyplot as plt
+from numba import jit, objmode
 
 def length(x):
     return len(x)
 
-def zeros(a, b):
-    return np.zeros((a, b))
+# def zeros(a, b):
+#     return np.zeros((a, b))
 
-def transpose(x):
-    return x.transpose()
 
 def dot(a, b):
     return np.sum(a.conj()*b, axis=0)
     
+
+
+
+# @jit(nopython=True)
 def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*args,**kwargs):
 
     # this function should be a real-time function, so simulated in
             # a for loop
     
     wd=round((1 / f) / Ts)
-    I=zeros(length(t),3)
-    V=zeros(length(t),3)
-    IabcForm=transpose(Iabc)
-    VabcForm=transpose(Vabc)
-    Z=zeros(length(t),6) # Changed from 3 to 6
-    V=transpose(Vabc)
+    I=np.zeros((len(t),3))
+    V=np.zeros((len(t),3))
+    IabcForm=Iabc.transpose()
+    VabcForm=Vabc.transpose()
+    Z=np.zeros((len(t),6)) # Changed from 3 to 6
+    V=Vabc.transpose()
     indexFaultIncep=0
     indexFaultStable=0
     estFaultStableTime=0
     indexExecute=0
     estFaultType=0
 
-    for k in np.arange(wd+1,length(t),1):
+    for k in np.arange(wd+1,len(t),1):
         wdI=IabcForm[k-wd:k,:]
         wdV=VabcForm[k-wd:k,:]
 
-        Ifft=fft(wdI, axis=0)
-        Vfft=fft(wdV, axis=0)
+        # Maybe this can be optimized
+        # with objmode(Ifft='complex128[:]'):
+        Ifft=np.fft.fft(wdI, axis=0)
+        # with objmode(Vfft='complex128[:]'):
+        Vfft=np.fft.fft(wdV, axis=0)
 
         I = I.astype('complex64')
         V = V.astype('complex64')
 
-        I[k,:]=2.0*Ifft[1,:]/wd
-        V[k,:]=2.0*Vfft[1,:]/wd
+        I[k,:]=(2.0*Ifft[1,:]/wd)
+        V[k,:]=(2.0*Vfft[1,:]/wd)
 
         Zab=abs((V[k,0] - V[k,1]) / (I[k,0] - I[k,1]))
         Zbc=abs((V[k,1] - V[k,2]) / (I[k,1] - I[k,2]))

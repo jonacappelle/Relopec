@@ -13,13 +13,31 @@ import numpy as np
 import itertools
 from numpy.linalg import multi_dot
 from numpy.linalg import inv
-
 import matplotlib.pyplot as plt
-
 import math
+import timeit
+import time
+from numba import njit, jit, prange
+from loess.loess_1d import loess_1d
+
+def calculate_optimized(iF, vF, Ts, tn):
+    ZfFict=np.zeros((2,len(tn)))
+
+    for n in np.arange(1,len(tn) - 1,1):
+        A_matrix=[[iF[n] - iF[n - 1],np.dot((iF[n - 1] + iF[n]),Ts) / 2], [iF[n + 1] - iF[n],np.dot((iF[n + 1] + iF[n]),Ts) / 2]]
+        B_matrix=[[np.dot((vF[n - 1] + vF[n]),(Ts/2))], [np.dot((vF[n] + vF[n + 1]),(Ts/2))]]
+        ZfFict[:,[n]]= np.dot(np.linalg.pinv(A_matrix),B_matrix) # Compute pseudo inverse of matrix if it can't be inversed
+        # TODO klopt nog niet helemaal - +- oke
+
+    return ZfFict
+
+
+
 
 def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTime=None,*args,**kwargs):
     
+    iF = None
+
     # voltage at the (assumed) fault location
     vFa=vF[0,:]
     vFb=vF[1,:]
@@ -57,14 +75,16 @@ def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTi
                         iF=(iaBf - iaAf)
     
     
-    ZfFict=np.zeros((2,len(tn)))
     
-    for n in np.arange(1,len(tn) - 1,1):
-        A_matrix=[[iF[n] - iF[n - 1],np.dot((iF[n - 1] + iF[n]),Ts) / 2], [iF[n + 1] - iF[n],np.dot((iF[n + 1] + iF[n]),Ts) / 2]]
-        B_matrix=[[np.dot((vF[n - 1] + vF[n]),(Ts/2))], [np.dot((vF[n] + vF[n + 1]),(Ts/2))]]
-        ZfFict[:,[n]]= np.dot(np.linalg.pinv(A_matrix),B_matrix) # Compute pseudo inverse of matrix if it can't be inversed
-        # TODO klopt nog niet helemaal - +- oke
+
+    # start = time.time()
     
+    ZfFict = calculate_optimized(iF, vF, Ts, tn)
+    
+    # stop = time.time()
+    # print("Fault time")
+    # print(stop-start)
+
     #find the overal inducance and resistance by taking the average
             #over one period (0.02 seconds for 50 hertz)
             #this step requires us to know the time of fault inception
@@ -76,7 +96,9 @@ def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTi
     
     RfFict=np.mean(ZfFict[1,index1[0][0]:index2[0][0]])
     return LfFict,RfFict,ZfFict
-    
+
+
+
 if __name__ == '__main__':
     pass
     
@@ -211,6 +233,16 @@ def smooth(y, box_pts):
     y_smooth = np.convolve(y, box, mode='same')
     return y_smooth
 
+def smooth2(a,WSZ):
+    # a: NumPy 1-D array containing the data to be smoothed
+    # WSZ: smoothing window size needs, which must be odd number,
+    # as in the original MATLAB implementation
+    out0 = np.convolve(a,np.ones(WSZ,dtype=int),'valid')/WSZ    
+    r = np.arange(1,WSZ-1,2)
+    start = np.cumsum(a[:WSZ-1])[::2]/r
+    stop = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]
+    return np.concatenate((  start , out0, stop  ))
+
 def plot_function(x, a):
     return a[2]*x**2 + a[1]*x + a[0]
     
@@ -220,12 +252,18 @@ def findZeroCross(LfFictArray=None,k=None,*args,**kwargs):
     zeroCross2=0
     zeroCross3=0
     zeroCross4=0
-    LfFictFit=smooth(LfFictArray[:,0],5)
-    LfFictFit3=smooth(LfFictFit,5)
-    LfFictFit2=np.polyfit(np.transpose(k),LfFictFit,2)
+
+    LfFictFit=smooth(LfFictArray,20) # frac = +-0.1
+    # xout, LfFictFit, wout = loess_1d(k, LfFictArray[:,0], frac=0.1, npoints=5)
+
+    LfFictFit3=smooth(LfFictFit,150) # frac = +-0.8
+    # xout, LfFictFit3, wout = loess_1d(np.transpose(k), LfFictArray[:,0], xnew=None, degree=1, frac=0.1, npoints=5, rotate=False, sigy=None)
+
+
+    LfFictFit2=np.polyfit(k,LfFictFit,2)
 
     # Fitten maar
-    LfFictFit2Plot=np.polyfit(np.transpose(k),LfFictFit,2)
+    LfFictFit2Plot=np.polyfit(k,LfFictFit,2)
     # k  is x range
     # maak y range
 
