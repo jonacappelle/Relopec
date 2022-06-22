@@ -33,13 +33,11 @@ def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C
     R1=k*R_line
     # after the fault
     L2=(1-k)*L_line
-    R2=(1 - k)*R_line
+    R2=(1-k)*R_line
     
     i2=I_trans
 
-    vF = np.zeros((3,len(I_trans[0])))
-
-   
+    vF = np.zeros((3,len(I_trans[0])))   
 
     for n in np.arange(1,length(tn)-1,1):
         DiIn=(I_trans[:,n] - I_trans[:,n-1]) / Ts

@@ -21,7 +21,9 @@ def dot(a, b):
     return np.sum(a.conj()*b, axis=0)
     
 
-
+# @jit(nopython=False)
+def fft(a):
+    return np.fft.fft(a, axis=0)
 
 # @jit(nopython=True)
 def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*args,**kwargs):
@@ -32,6 +34,12 @@ def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*a
     wd=round((1 / f) / Ts)
     I=np.zeros((len(t),3))
     V=np.zeros((len(t),3))
+
+    # Iabc.astype('complex64')
+    # Vabc.astype('complex64')
+    # IabcForm = np.array(IabcForm).astype('complex64')
+    # VabcForm = np.array(VabcForm).astype('complex64')
+
     IabcForm=Iabc.transpose()
     VabcForm=Vabc.transpose()
     Z=np.zeros((len(t),6)) # Changed from 3 to 6
@@ -48,9 +56,9 @@ def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*a
 
         # Maybe this can be optimized
         # with objmode(Ifft='complex128[:]'):
-        Ifft=np.fft.fft(wdI, axis=0)
+        Ifft=fft(wdI)
         # with objmode(Vfft='complex128[:]'):
-        Vfft=np.fft.fft(wdV, axis=0)
+        Vfft=fft(wdV)
 
         I = I.astype('complex64')
         V = V.astype('complex64')
@@ -100,19 +108,6 @@ def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*a
     Zb=abs(V[:,1] / I[:,1])
     Zc=abs(V[:,2] / I[:,2])
     
-    #estFaultIncepTime=0;
-    
-    # figure(6)
-    # plot(t,Zab)
-    # hold('on')
-    # plot(t,Zbc)
-    # plot(t,Zca)
-    
-    # figure(7)
-    # plot(t,Za)
-    # hold('on')
-    # plot(t,Zb)
-    # plot(t,Zc)
     return estFaultType,estFaultIncepTime,estFaultStableTime
     
 if __name__ == '__main__':

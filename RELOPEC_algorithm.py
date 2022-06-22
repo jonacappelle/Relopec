@@ -16,7 +16,9 @@ import tqdm
 import multiprocessing as mp
 from itertools import product
 from itertools import repeat
+import pickle
 
+USE_CACHED_DATA = True
 
 I_trans = None
 V_trans = None
@@ -90,45 +92,65 @@ def findFault(n):
     return LfFict
     # return n
 
+def write_data(name, data):
+
+    with open(name, 'wb') as f:
+        pickle.dump(data, f)
+
+    print("Data saved to file")
+
+
+def  read_data(name):
+
+    with open(name, 'rb') as f:
+        data = pickle.load(f)
+
+    return data
+
 
 # THIS IS THE MAIN SCRIPT OF THE ALGORITHM
 if __name__=="__main__":
-    mp.freeze_support()
 
-    # Load Simulation Data
-    print("Load data")
-    data = scipy.io.loadmat('data.mat')
+    if USE_CACHED_DATA == False:
+        mp.freeze_support()
 
-    Iabc = data['Iabc']
-    Vabc = data['Vabc']
-    t = data['t']
+        # Load Simulation Data
+        print("Load data")
+        data = scipy.io.loadmat('data2.mat')
 
-    # Fault identification and classification
-    print("Detect fault")
-    start = time.time()
-    estFaultType,estFaultIncepTime,estFaultStableTime=myFunctionFaultSelection.FaultIndentification(Iabc,Vabc,t,f,Ts,Zbase)
-    end = time.time()
-    print("Time to detect fault:", end = ' ')
-    print(end-start)
-    print("estFaultType:", end = ' ')
-    print(estFaultType)
-    print("estFaultIncepTime:", end = ' ')
-    print(estFaultIncepTime)
-    print("estFaultStableTime:", end = ' ')
-    print(estFaultStableTime)
+        Iabc = data['Iabc']
+        Vabc = data['Vabc']
+        t = data['t']
 
-    ## FILTER OUT THE FUNDAMENTAL FREQUENCY
-    print("Filter fundamental")
-    I_trans,V_trans,tn=myFunctionDataProcess.FilterFundamental(f,Ts,Iabc,Vabc,t,nargout=3)
-        
-    ## CALCULATING FICTITIOUS FAULT INDUCTANCE
-    # Run calculation for every point in k (every point on the line)
-    print("Start fault detection")
-    pool = mp.Pool(processes=mp.cpu_count(), initializer=findFaultInit, initargs=(I_trans, V_trans, k, tn, estFaultType, estFaultStableTime))
-    LfFictArray = pool.map(findFault, np.arange(0,len(k)))
-    # LfFictArray = pool.map(findFault, np.arange(0,20))
+        # Fault identification and classification
+        print("Detect fault")
+        start = time.time()
+        estFaultType,estFaultIncepTime,estFaultStableTime=myFunctionFaultSelection.FaultIndentification(Iabc,Vabc,t,f,Ts,Zbase)
+        end = time.time()
+        print("Time to detect fault:", end = ' ')
+        print(end-start)
+        print("estFaultType:", end = ' ')
+        print(estFaultType)
+        print("estFaultIncepTime:", end = ' ')
+        print(estFaultIncepTime)
+        print("estFaultStableTime:", end = ' ')
+        print(estFaultStableTime)
 
-    print(LfFictArray)
+        ## FILTER OUT THE FUNDAMENTAL FREQUENCY
+        print("Filter fundamental")
+        I_trans,V_trans,tn=myFunctionDataProcess.FilterFundamental(f,Ts,Iabc,Vabc,t,nargout=3)
+            
+        ## CALCULATING FICTITIOUS FAULT INDUCTANCE
+        # Run calculation for every point in k (every point on the line)
+        print("Start fault detection")
+        pool = mp.Pool(processes=mp.cpu_count(), initializer=findFaultInit, initargs=(I_trans, V_trans, k, tn, estFaultType, estFaultStableTime))
+        LfFictArray = pool.map(findFault, np.arange(0,len(k)))
+        # LfFictArray = pool.map(findFault, np.arange(0,20))
+
+        data = [k, LfFictArray]
+        write_data("tempData", data)
+
+    [k, LfFictArray] = read_data("tempData")
 
     ## Find zero crossing and hence the distance to the fault
     print("Find zero cross")

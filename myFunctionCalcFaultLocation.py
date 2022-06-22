@@ -19,6 +19,9 @@ import timeit
 import time
 from numba import njit, jit, prange
 from loess.loess_1d import loess_1d
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+
 
 def calculate_optimized(iF, vF, Ts, tn):
     ZfFict=np.zeros((2,len(tn)))
@@ -244,8 +247,22 @@ def smooth2(a,WSZ):
     return np.concatenate((  start , out0, stop  ))
 
 def plot_function(x, a):
-    return a[2]*x**2 + a[1]*x + a[0]
+    return x, a[0]*x**2 + a[1]*x + a[2]
     
+
+def removeOutliers(x, y):
+    y = np.array(y)
+    x = np.array(x)
+    mean = np.mean(y)
+    standard_deviation = np.std(y)
+    distance_from_mean = abs(y - mean)
+    max_deviations = 1
+    not_outlier = distance_from_mean < max_deviations * standard_deviation
+    y_noOutliers = y[not_outlier]
+    x_noOutliers = x[not_outlier]
+    return x_noOutliers, y_noOutliers
+
+
 def findZeroCross(LfFictArray=None,k=None,*args,**kwargs):
 
     zeroCross1=0
@@ -253,50 +270,39 @@ def findZeroCross(LfFictArray=None,k=None,*args,**kwargs):
     zeroCross3=0
     zeroCross4=0
 
-    LfFictFit=smooth(LfFictArray,20) # frac = +-0.1
-    # xout, LfFictFit, wout = loess_1d(k, LfFictArray[:,0], frac=0.1, npoints=5)
+    # Remove outliers
+    k_noOutliers, LfFictFit_noOutliers = removeOutliers(k, LfFictArray)
+    
+    # Smooth
+    LfFictFit_noOutliers=smooth(LfFictFit_noOutliers,20) # frac = +-0.1
+    # LfFictFit3=smooth(LfFictFit,150) # frac = +-0.8
 
-    LfFictFit3=smooth(LfFictFit,150) # frac = +-0.8
-    # xout, LfFictFit3, wout = loess_1d(np.transpose(k), LfFictArray[:,0], xnew=None, degree=1, frac=0.1, npoints=5, rotate=False, sigy=None)
+    LfFictFit2=np.polyfit(k_noOutliers,LfFictFit_noOutliers,2)
+    y_np = np.polyval(LfFictFit2, k)
 
-
-    LfFictFit2=np.polyfit(k,LfFictFit,2)
-
-    # Fitten maar
-    LfFictFit2Plot=np.polyfit(k,LfFictFit,2)
-    # k  is x range
-    # maak y range
-
-    ylist = plot_function(k, LfFictFit2Plot)
-
+    # Calculate zeros
     r=np.roots(LfFictFit2)
-    for n in np.arange(0,len(r)-1,1):
+    for n in np.arange(0,len(r),1):
         if r[n] < 1 and r[n] > 0:
             zeroCross1=r[n]
     
-    n=2
-    while np.sign(LfFictFit3[n]) == np.sign(LfFictFit3[n - 1]) and n < len(k):
+    # n=2
+    # while np.sign(LfFictFit3[n]) == np.sign(LfFictFit3[n - 1]) and n < len(k):
 
-        n=n + 1
+    #     n=n + 1
+    # zeroCross2=k[n - 1] + np.dot(abs(LfFictFit3[n - 1]),((k[n] - k[n - 1]) / abs(LfFictFit3[n] - LfFictFit3[n - 1])))
+    # zeroCross3=np.mean([zeroCross1,zeroCross2])
 
-    
-    zeroCross2=k[n - 1] + np.dot(abs(LfFictFit3[n - 1]),((k[n] - k[n - 1]) / abs(LfFictFit3[n] - LfFictFit3[n - 1])))
-    zeroCross3=np.mean([zeroCross1,zeroCross2])
-    # figure(5)
-    # plot(k,LfFictArray,'o','color','black')
-    # hold('on')
-    # #     plot(k,LfFictFit)
-    #     #     hold on
-    # plot(LfFictFit2Plot)
-    # #     hold on
-    #     #     plot(k, LfFictFit3)
-    # hold('off')
 
-    plt.scatter(k, LfFictArray)
-    plt.plot(k, ylist)
+    plt.scatter(k, LfFictArray, color="grey", alpha=0.5, label="Data")
+    plt.scatter(k_noOutliers, LfFictFit_noOutliers, color="green", alpha=0.5, label="No outliers + smoothed")
+    plt.plot(k, y_np, color="red", label="Fit np")
+    plt.legend()
+    plt.title("ZeroCross: " + str('{:.3f}'.format(zeroCross1)))
+    plt.ylim(-0.03, 0.03)
+    plt.savefig("result.png")
     plt.show()
-
-
+    
     return zeroCross1
     
 if __name__ == '__main__':
