@@ -44,7 +44,6 @@ def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C
         vF[:,n]=V_trans[:,n] - L1*DiIn - R1*I_trans[:,n]
 
 
-
     #SECOND SECTION (after fault using state space)
     X=np.zeros((3,length(tn)))
     A=(- (R2 + Rg) / (L2 + Lg)*np.eye(3))

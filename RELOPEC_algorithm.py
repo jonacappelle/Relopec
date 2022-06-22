@@ -32,10 +32,10 @@ k=np.arange(0.01,0.99+0.005,0.005)
 LfFictArray=np.zeros((len(k),1))
 RfFictArray=np.zeros((len(k),1))
 
+# Progress bar
 pbar = tqdm.tqdm(total=196)
-def update(*a):
+def update_progress(*a):
     pbar.update()
-
 
 def findFaultInit(I_trans_local, V_trans_local, k_local, tn_local, estFaultType_local, estFaultStableTime_local):
     global I_trans 
@@ -50,12 +50,11 @@ def findFaultInit(I_trans_local, V_trans_local, k_local, tn_local, estFaultType_
     estFaultType = estFaultType_local
     global estFaultStableTime
     estFaultStableTime = estFaultStableTime_local
-
     return 
 
 def findFault(n):
 
-    update()
+    update_progress()
 
     global I_trans
     global V_trans
@@ -66,31 +65,13 @@ def findFault(n):
     global LfFictArray
     global RfFictArray
 
-    # for n in np.arange(0,len(k)-1,1):
-    # for n in np.arange(0,2,1):
-        # start1 = time.time()
-
     vF,i2,X=myFunctionCalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
-
-    # end1 = time.time()
-    # start2 = time.time()
 
     LfFict,RfFict,ZfFict=myFunctionCalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
 
-    LfFictArray[n]=LfFict
-
-    # end2 = time.time()
-
-    # print("n:")
-    # print(n)
-    # print("Time:")
-    # print(end1 - start1)
-    # print(end2 - start2)
-
-    
+    # LfFictArray[n]=LfFict    # This is now in parallel
 
     return LfFict
-    # return n
 
 def write_data(name, data):
 
@@ -99,7 +80,6 @@ def write_data(name, data):
 
     print("Data saved to file")
 
-
 def  read_data(name):
 
     with open(name, 'rb') as f:
@@ -107,8 +87,7 @@ def  read_data(name):
 
     return data
 
-
-# THIS IS THE MAIN SCRIPT OF THE ALGORITHM
+# MAIN SCRIPT OF THE ALGORITHM
 if __name__=="__main__":
 
     if USE_CACHED_DATA == False:
@@ -118,10 +97,14 @@ if __name__=="__main__":
         print("Load data")
         data = scipy.io.loadmat('data2.mat')
 
+        # Put data in variables
         Iabc = data['Iabc']
         Vabc = data['Vabc']
         t = data['t']
 
+        #########################################################
+        # PART I: Needs to run at 2 kHz continuously
+        #########################################################
         # Fault identification and classification
         print("Detect fault")
         start = time.time()
@@ -135,24 +118,29 @@ if __name__=="__main__":
         print(estFaultIncepTime)
         print("estFaultStableTime:", end = ' ')
         print(estFaultStableTime)
+        #########################################################
 
-        ## FILTER OUT THE FUNDAMENTAL FREQUENCY
+        #########################################################
+        # PART II: Calculate fault location: only needs to run once to fault has been identified by part I
+        #########################################################
+        # Filter out fundamental frequency
         print("Filter fundamental")
         I_trans,V_trans,tn=myFunctionDataProcess.FilterFundamental(f,Ts,Iabc,Vabc,t,nargout=3)
             
-        ## CALCULATING FICTITIOUS FAULT INDUCTANCE
-        # Run calculation for every point in k (every point on the line)
+        # Calculate fictitious fault inductance for every point on the line (k)
         print("Start fault detection")
         pool = mp.Pool(processes=mp.cpu_count(), initializer=findFaultInit, initargs=(I_trans, V_trans, k, tn, estFaultType, estFaultStableTime))
         LfFictArray = pool.map(findFault, np.arange(0,len(k)))
-        # LfFictArray = pool.map(findFault, np.arange(0,20))
+        
 
+        # (Temp) Save data for debugging purposes
         data = [k, LfFictArray]
         write_data("tempData", data)
 
+    # (Temp) Read data for debugging purposes
     [k, LfFictArray] = read_data("tempData")
 
-    ## Find zero crossing and hence the distance to the fault
+    # Find zero crossing and hence the distance to the fault
     print("Find zero cross")
     zeroCross1=myFunctionCalcFaultLocation.findZeroCross(LfFictArray,k)
     print("zerocross:", end = ' ')
@@ -160,3 +148,4 @@ if __name__=="__main__":
     print("FaultLocData:", end = ' ')
     faultLocData = 0.3
     print(faultLocData) # Dit zou 0.3 moeten zijn
+    #########################################################
