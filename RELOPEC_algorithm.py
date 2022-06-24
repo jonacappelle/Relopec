@@ -17,8 +17,9 @@ import multiprocessing as mp
 from itertools import product
 from itertools import repeat
 import pickle
+import os
 
-USE_CACHED_DATA = True
+USE_CACHED_DATA = False
 
 # Global variables
 I_trans = None
@@ -71,7 +72,6 @@ def findFault(n):
     LfFict,RfFict,ZfFict=myFunctionCalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
 
     # LfFictArray[n]=LfFict    # This is now in parallel
-
     return LfFict
 
 def write_data(name, data):
@@ -87,6 +87,28 @@ def  read_data(name):
         data = pickle.load(f)
 
     return data
+
+def tests_matlab_python():
+    #########################################
+    # Matlab to python test
+    array = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 , 12])
+
+    print("---------")
+    print(array[3:8])
+    # First argument: - 1
+    # Last argument: keep
+    print(array[1:-1-2+1])
+    # First argument: - 1
+    # Last argument: + 1
+    print(array[-1-3:-1-1+1])
+    # Keep first argument with end
+    # Last argument: + 1
+    for i in np.arange(0,5):
+        print(i)
+    print("---------")
+    #########################################
+    os.system("pause")
+
 
 # MAIN SCRIPT OF THE ALGORITHM
 if __name__=="__main__":
@@ -113,12 +135,6 @@ if __name__=="__main__":
         end = time.time()
         print("Time to detect fault:", end = ' ')
         print(end-start)
-        print("estFaultType:", end = ' ')
-        print(estFaultType)
-        print("estFaultIncepTime:", end = ' ')
-        print(estFaultIncepTime)
-        print("estFaultStableTime:", end = ' ')
-        print(estFaultStableTime)
         #########################################################
 
         #########################################################
@@ -127,13 +143,15 @@ if __name__=="__main__":
         # Filter out fundamental frequency
         print("Filter fundamental")
         I_trans,V_trans,tn=myFunctionDataProcess.FilterFundamental(f,Ts,Iabc,Vabc,t,nargout=3)
-            
+        # Small variations on I_trans and V_trans, probably due to different way of calculation between Matlab and Python (some rounding maybe?)
+        # These variations get bigger since future calculations use these values
+        
         # Calculate fictitious fault inductance for every point on the line (k)
+        # Using multiprocessing to speed up the calculation
         print("Start fault detection")
         pool = mp.Pool(processes=mp.cpu_count(), initializer=findFaultInit, initargs=(I_trans, V_trans, k, tn, estFaultType, estFaultStableTime))
         LfFictArray = pool.map(findFault, np.arange(0,len(k)))
         
-
         # (Temp) Save data for debugging purposes
         data = [k, LfFictArray]
         write_data("tempData", data)
@@ -144,9 +162,7 @@ if __name__=="__main__":
     # Find zero crossing and hence the distance to the fault
     print("Find zero cross")
     zeroCross1=myFunctionCalcFaultLocation.findZeroCross(LfFictArray,k)
-    print("zerocross:", end = ' ')
-    print(zeroCross1)
     print("FaultLocData:", end = ' ')
-    faultLocData = 0.3
-    print(faultLocData) # Dit zou 0.3 moeten zijn
+    faultLocData = 0.8
+    print(faultLocData) # Dit zou 0.3 moeten zijn voor "data.mat" en 0.8 voor "data2.mat"
     #########################################################

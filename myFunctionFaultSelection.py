@@ -1,25 +1,11 @@
-# Generated with SMOP  0.41-beta
-# from libsmop import *
-# myFunctionFaultSelection.m
-
-    #classdef myFunctionFaultSelection
-    #methods(Static)
 import numpy as np
 from scipy.fft import fft, ifft
 import copy
 import matplotlib.pyplot as plt
-from numba import jit, objmode
+# from numba import jit, objmode
 
-def length(x):
-    return len(x)
-
-# def zeros(a, b):
-#     return np.zeros((a, b))
-
-
-def dot(a, b):
-    return np.sum(a.conj()*b, axis=0)
-    
+if __name__ == '__main__':
+    pass
 
 # @jit(nopython=False)
 def fft(a):
@@ -27,18 +13,10 @@ def fft(a):
 
 # @jit(nopython=True)
 def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*args,**kwargs):
-
-    # this function should be a real-time function, so simulated in
-            # a for loop
     
     wd=round((1 / f) / Ts)
     I=np.zeros((len(t),3))
     V=np.zeros((len(t),3))
-
-    # Iabc.astype('complex64')
-    # Vabc.astype('complex64')
-    # IabcForm = np.array(IabcForm).astype('complex64')
-    # VabcForm = np.array(VabcForm).astype('complex64')
 
     IabcForm=Iabc.transpose()
     VabcForm=Vabc.transpose()
@@ -50,7 +28,9 @@ def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*a
     indexExecute=0
     estFaultType=0
 
-    for k in np.arange(wd+1,len(t),1):
+    # The for loop simulates the real-time behaviour of the data
+    # In practice: these values need to be executed only once at 2 kHz
+    for k in np.arange(wd+1,len(t)):
         wdI=IabcForm[k-wd:k,:]
         wdV=VabcForm[k-wd:k,:]
 
@@ -97,21 +77,21 @@ def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*a
                         estFaultType=3
                     else:
                         if Zab > (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca< (0.5*Zbase):
-                        # if Zab > (0.5*Zbase) and Zbc[k,2] > (0.5*Zbase) and Zca[k,3]< (0.5*Zbase):
                             estFaultType=4
-    
-    
-    Zab=abs((V[:,0] - V[:,1]) / (I[:,0] - I[:,1]))
-    Zbc=abs((V[:,1] - V[:,2]) / (I[:,1] - I[:,2]))
-    Zca=abs((V[:,2] - V[:,0]) / (I[:,2] - I[:,0]))
-    Za=abs(V[:,0] / I[:,0])
-    Zb=abs(V[:,1] / I[:,1])
-    Zc=abs(V[:,2] / I[:,2])
+
+    # Not necessary I guess    
+    # Zab=abs((V[:,0] - V[:,1]) / (I[:,0] - I[:,1]))
+    # Zbc=abs((V[:,1] - V[:,2]) / (I[:,1] - I[:,2]))
+    # Zca=abs((V[:,2] - V[:,0]) / (I[:,2] - I[:,0]))
+    # Za=abs(V[:,0] / I[:,0])
+    # Zb=abs(V[:,1] / I[:,1])
+    # Zc=abs(V[:,2] / I[:,2])
+
+    print("estFaultType:", end = ' ')
+    print(estFaultType)
+    print("estFaultIncepTime:", end = ' ')
+    print(estFaultIncepTime)
+    print("estFaultStableTime:", end = ' ')
+    print(estFaultStableTime)
     
     return estFaultType,estFaultIncepTime,estFaultStableTime
-    
-if __name__ == '__main__':
-    pass
-    
-    #end
-#end
