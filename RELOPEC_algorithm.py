@@ -1,3 +1,4 @@
+from tempfile import tempdir
 import scipy.io
 import findData
 from precision import Precision
@@ -18,8 +19,13 @@ from itertools import product
 from itertools import repeat
 import pickle
 import os
+from ctypes import *
+import sys
+import struct
+import random
 
 USE_CACHED_DATA = False
+USE_IEC61850_DATA = True
 
 # Global variables
 I_trans = None
@@ -109,6 +115,35 @@ def tests_matlab_python():
     #########################################
     os.system("pause")
 
+def getData():
+
+    # Read the data
+    temp = sys.stdin.read(100)
+
+    splitPacket = temp.split()
+
+    t = splitPacket[0]
+
+    V1 = splitPacket[1]
+    V2 = splitPacket[2]
+    V3 = splitPacket[3]
+
+    I1 = splitPacket[4]
+    I2 = splitPacket[5]
+    I3 = splitPacket[6]
+
+    # t = random.uniform(-1000,1000)
+
+    # V1 = random.uniform(-1000,1000)
+    # V2 = random.uniform(-1000,1000)
+    # V3 = random.uniform(-1000,1000)
+
+    # I1 = random.uniform(-1000,1000)
+    # I2 = random.uniform(-1000,1000)
+    # I3 = random.uniform(-1000,1000)
+
+    return t, V1, V2, V3, I1, I2, I3
+
 
 # MAIN SCRIPT OF THE ALGORITHM
 if __name__=="__main__":
@@ -116,14 +151,75 @@ if __name__=="__main__":
     if USE_CACHED_DATA == False:
         mp.freeze_support()
 
-        # Load Simulation Data
-        print("Load data")
-        data = scipy.io.loadmat('data2.mat')
+        if USE_IEC61850_DATA == False:
 
-        # Put data in variables
-        Iabc = data['Iabc']
-        Vabc = data['Vabc']
-        t = data['t']
+            # Load Simulation Data
+            print("Load data")
+            data = scipy.io.loadmat('data2.mat')
+
+            # Put data in variables
+            Iabc = data['Iabc']
+            Vabc = data['Vabc']
+            t = data['t']
+
+        if USE_IEC61850_DATA == True:
+            print("USE_IEC61850_DATA == True")
+
+            t, V1, V2, V3, I1, I2, I3 = getData()
+
+            # Create empty arrays
+            Iabc = [[I1, I2, I3]]
+            Vabc = [[V1, V2, V3]]
+            t = []
+
+            # Fill array for first time
+            sample_cnt = 0
+            while(sample_cnt <= 198):
+                t, V1, V2, V3, I1, I2, I3 = getData()
+                Iabc = np.append(Iabc, [[I1, I2, I3]], axis=0)
+
+                t, V1, V2, V3, I1, I2, I3 = getData()
+                Vabc = np.append(Vabc, [[V1, V2, V3]], axis=0)
+
+                sample_cnt = sample_cnt + 1
+
+            # the Z from 200 samples earlier
+            previousZarray = np.zeros(200)
+
+            # Fault detection loop
+            while(1):
+
+                start = time.time()
+
+                # Make last place in array free
+                Iabc = np.roll(Iabc, -1, axis=0)
+
+                # Fill last place with new data
+                t, V1, V2, V3, I1, I2, I3 = getData() # Data is comming in at 4kHz or faster from C program (checked)
+                Iabc[-1] = [I1, I2, I3]
+
+                # data = scipy.io.loadmat('data2.mat')
+                # t = data['t']
+                # Iabc = data['Iabc']
+                # Vabc = data['Vabc']
+                # Iabc, Vabc, Z, t = myFunctionFaultSelection.testDataset(Iabc,Vabc,t,f,Ts,Zbase)
+
+                # Do the calculations on the updated data with the latest 200st array for comparing Z
+                estFaultType,estFaultIncepTime,estFaultStableTime, Z = myFunctionFaultSelection.RealTimeFaultIndentification(Iabc, Vabc, t, previousZarray[-200])  
+
+                previousZarray[-1] = Z
+                previousZarray = np.roll(previousZarray, -1)
+
+                end = time.time()
+                print((end -start)*1000) # in milliseconds
+                
+
+            # Put data in variables
+            # Iabc = 0
+            # Vabc = 0
+            # t = 0
+
+        
 
         #########################################################
         # PART I: Needs to run at 2 kHz continuously
