@@ -12,6 +12,7 @@ def fft(a):
     return np.fft.fft(a, axis=0)
 
 
+temp = 0
 
 # @jit(nopython=True)
 def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*args,**kwargs):
@@ -22,7 +23,7 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*a
 
     Zbase = 45
 
-    wd=round((1 / f) / Ts)
+    wd=200#round((1 / f) / Ts)
     I=np.zeros(3)
     V=np.zeros(3)
 
@@ -70,6 +71,9 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*a
     Z[4]=Zb
     Z[5]=Zc
 
+    if minPreviousZ != 0:
+        print(" ")
+
     if min(Z) < (0.5*Zbase) and indexFaultIncep < 1:
         estFaultIncepTime=t
         indexFaultIncep=indexFaultIncep + 1
@@ -96,6 +100,16 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*a
         print(estFaultIncepTime)
         print("estFaultStableTime:", end = ' ')
         print(estFaultStableTime)
+    
+    # global temp
+    # temp = temp + 1
+
+    # if temp > 100:
+    #     plt.scatter(t, min(Z))
+    #     plt.scatter(t, minPreviousZ)
+    #     plt.pause(0.00001)
+
+    #     temp = 0
     
     return estFaultType,estFaultIncepTime,estFaultStableTime, min(Z)
 
@@ -177,6 +191,13 @@ def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*a
         Z[k,4]=Zb
         Z[k,5]=Zc
 
+        # if k > 6600:
+        #     plt.scatter(t[k], min(Z[k,:]))
+        #     plt.pause(0.00001)
+
+        if min(Z[k - wd,:]) != 0:
+            print(" ")
+
         if min(Z[k,:]) < (0.5*Zbase) and indexFaultIncep < 1:
             estFaultIncepTime=t[k]
             indexFaultIncep=indexFaultIncep + 1
@@ -195,6 +216,8 @@ def FaultIndentification(Iabc=None,Vabc=None,t=None,f=None,Ts=None,Zbase=None,*a
                     else:
                         if Zab > (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca< (0.5*Zbase):
                             estFaultType=4
+            # plt.scatter(t[k], 200)
+            # plt.pause(0.00001)
 
     # Not necessary I guess    
     # Zab=abs((V[:,0] - V[:,1]) / (I[:,0] - I[:,1]))

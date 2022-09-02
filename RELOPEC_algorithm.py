@@ -25,7 +25,8 @@ import struct
 import random
 
 USE_CACHED_DATA = False
-USE_IEC61850_DATA = True
+USE_IEC61850_DATA = False
+USE_SIMULATED_DATA = True
 
 # Global variables
 I_trans = None
@@ -80,6 +81,14 @@ def findFault(n):
     # LfFictArray[n]=LfFict    # This is now in parallel
     return LfFict
 
+def checkSettings():
+    if USE_CACHED_DATA == True:
+        print("USE_CACHED_DATA")
+    if USE_IEC61850_DATA == True:
+        print("USE_IEC61850_DATA")
+    if USE_SIMULATED_DATA == True:
+        print("USE_SIMULATED_DATA")
+
 def write_data(name, data):
 
     with open(name, 'wb') as f:
@@ -115,38 +124,53 @@ def tests_matlab_python():
     #########################################
     os.system("pause")
 
+# Dataset
+MatlabSimDataSet = scipy.io.loadmat('data2.mat')
+MatlabSimDataSetIndex = 0
+
 def getData():
 
-    # Read the data
-    temp = sys.stdin.read(100)
+    if USE_SIMULATED_DATA == True:
 
-    splitPacket = temp.split()
+        global MatlabSimDataSetIndex
+        MatlabSimDataSetIndex = MatlabSimDataSetIndex + 1
 
-    t = splitPacket[0]
+        t = MatlabSimDataSet['t']
+        Iabc = MatlabSimDataSet['Iabc'].transpose()
+        Vabc = MatlabSimDataSet['Vabc'].transpose()
 
-    V1 = splitPacket[1]
-    V2 = splitPacket[2]
-    V3 = splitPacket[3]
+        return t[MatlabSimDataSetIndex,0], Vabc[MatlabSimDataSetIndex], Iabc[MatlabSimDataSetIndex]
 
-    I1 = splitPacket[4]
-    I2 = splitPacket[5]
-    I3 = splitPacket[6]
 
-    # t = random.uniform(-1000,1000)
+    if USE_IEC61850_DATA == True:
 
-    # V1 = random.uniform(-1000,1000)
-    # V2 = random.uniform(-1000,1000)
-    # V3 = random.uniform(-1000,1000)
+        # Read the data
+        temp = sys.stdin.read(100)
 
-    # I1 = random.uniform(-1000,1000)
-    # I2 = random.uniform(-1000,1000)
-    # I3 = random.uniform(-1000,1000)
+        splitPacket = temp.split()
 
-    return t, V1, V2, V3, I1, I2, I3
+        t = splitPacket[0]
+
+        V1 = splitPacket[1]
+        V2 = splitPacket[2]
+        V3 = splitPacket[3]
+
+        I1 = splitPacket[4]
+        I2 = splitPacket[5]
+        I3 = splitPacket[6]
+
+        V = [V1, V2, V3]
+        I = [I1, I2, I3]
+
+        return t, V, I
+
+
 
 
 # MAIN SCRIPT OF THE ALGORITHM
 if __name__=="__main__":
+
+    checkSettings()
 
     if USE_CACHED_DATA == False:
         mp.freeze_support()
@@ -162,64 +186,63 @@ if __name__=="__main__":
             Vabc = data['Vabc']
             t = data['t']
 
-        if USE_IEC61850_DATA == True:
-            print("USE_IEC61850_DATA == True")
+        if USE_IEC61850_DATA == True or USE_SIMULATED_DATA == True:
 
-            t, V1, V2, V3, I1, I2, I3 = getData()
-
-            # Create empty arrays
-            Iabc = [[I1, I2, I3]]
-            Vabc = [[V1, V2, V3]]
-            t = []
+            # Get the first set of data
+            t, Vabc, Iabc = getData()
 
             # Fill array for first time
             sample_cnt = 0
             while(sample_cnt <= 198):
-                t, V1, V2, V3, I1, I2, I3 = getData()
-                Iabc = np.append(Iabc, [[I1, I2, I3]], axis=0)
-
-                t, V1, V2, V3, I1, I2, I3 = getData()
-                Vabc = np.append(Vabc, [[V1, V2, V3]], axis=0)
-
+                t, V, I = getData()
+                Iabc = np.vstack((Iabc, I))
+                Vabc = np.vstack((Vabc, V))
                 sample_cnt = sample_cnt + 1
 
             # the Z from 200 samples earlier
             previousZarray = np.zeros(200)
 
+            k = 200
             # Fault detection loop
             while(1):
+                k = k + 1
+
+                if k>6840:
+                    print(k)
 
                 start = time.time()
 
-                # Make last place in array free
-                Iabc = np.roll(Iabc, -1, axis=0)
-
-                # Fill last place with new data
-                t, V1, V2, V3, I1, I2, I3 = getData() # Data is comming in at 4kHz or faster from C program (checked)
-                Iabc[-1] = [I1, I2, I3]
-
-                # data = scipy.io.loadmat('data2.mat')
-                # t = data['t']
-                # Iabc = data['Iabc']
-                # Vabc = data['Vabc']
-                # Iabc, Vabc, Z, t = myFunctionFaultSelection.testDataset(Iabc,Vabc,t,f,Ts,Zbase)
+                if(t > 0.6):
+                    print("t")
 
                 # Do the calculations on the updated data with the latest 200st array for comparing Z
                 estFaultType,estFaultIncepTime,estFaultStableTime, Z = myFunctionFaultSelection.RealTimeFaultIndentification(Iabc, Vabc, t, previousZarray[-200])  
+                if estFaultType != 0:
+                    print("Fault detected!")
+                    break
 
-                previousZarray[-1] = Z
+                # Make last place in array free
+                Iabc = np.roll(Iabc, -1, axis=0)
+                Vabc = np.roll(Vabc, -1, axis=0)
+
+                # Fill last place with new data
+                t, V, I = getData() # Data is comming in at 4kHz or faster from C program (checked)
+                Iabc[-1] = I
+                Vabc[-1] = V
+
+                # Add Z to previous array and roll
                 previousZarray = np.roll(previousZarray, -1)
+                previousZarray[-1] = Z
 
                 end = time.time()
                 print((end -start)*1000) # in milliseconds
-                
-
-            # Put data in variables
-            # Iabc = 0
-            # Vabc = 0
-            # t = 0
-
         
+
+            # Second part
+            print("Filter fundamental")
+            I_trans,V_trans,tn=myFunctionDataProcess.RealTimeFilterFundamental(f,Ts,Iabc,Vabc,t,nargout=3)
+
+
 
         #########################################################
         # PART I: Needs to run at 2 kHz continuously
