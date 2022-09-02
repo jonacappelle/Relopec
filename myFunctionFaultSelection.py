@@ -71,8 +71,6 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*a
     Z[4]=Zb
     Z[5]=Zc
 
-    if minPreviousZ != 0:
-        print(" ")
 
     if min(Z) < (0.5*Zbase) and indexFaultIncep < 1:
         estFaultIncepTime=t

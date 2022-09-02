@@ -184,7 +184,7 @@ if __name__=="__main__":
             # Put data in variables
             Iabc = data['Iabc']
             Vabc = data['Vabc']
-            t = data['t']
+            tabc = data['t']
 
         if USE_IEC61850_DATA == True or USE_SIMULATED_DATA == True:
 
@@ -197,26 +197,19 @@ if __name__=="__main__":
                 t, V, I = getData()
                 Iabc = np.vstack((Iabc, I))
                 Vabc = np.vstack((Vabc, V))
+                tabc = np.append(tabc, t)
                 sample_cnt = sample_cnt + 1
 
             # the Z from 200 samples earlier
             previousZarray = np.zeros(200)
 
-            k = 200
             # Fault detection loop
             while(1):
-                k = k + 1
-
-                if k>6840:
-                    print(k)
 
                 start = time.time()
 
-                if(t > 0.6):
-                    print("t")
-
                 # Do the calculations on the updated data with the latest 200st array for comparing Z
-                estFaultType,estFaultIncepTime,estFaultStableTime, Z = myFunctionFaultSelection.RealTimeFaultIndentification(Iabc, Vabc, t, previousZarray[-200])  
+                estFaultType,estFaultIncepTime,estFaultStableTime, Z = myFunctionFaultSelection.RealTimeFaultIndentification(Iabc, Vabc, tabc[-1], previousZarray[-200])  
                 if estFaultType != 0:
                     print("Fault detected!")
                     break
@@ -224,23 +217,25 @@ if __name__=="__main__":
                 # Make last place in array free
                 Iabc = np.roll(Iabc, -1, axis=0)
                 Vabc = np.roll(Vabc, -1, axis=0)
+                tabc = np.roll(tabc, -1, axis=0)
 
                 # Fill last place with new data
                 t, V, I = getData() # Data is comming in at 4kHz or faster from C program (checked)
                 Iabc[-1] = I
                 Vabc[-1] = V
+                tabc[-1] = t
 
                 # Add Z to previous array and roll
                 previousZarray = np.roll(previousZarray, -1)
                 previousZarray[-1] = Z
 
                 end = time.time()
-                print((end -start)*1000) # in milliseconds
+                # print((end -start)*1000) # in milliseconds
         
 
             # Second part
             print("Filter fundamental")
-            I_trans,V_trans,tn=myFunctionDataProcess.RealTimeFilterFundamental(f,Ts,Iabc,Vabc,t,nargout=3)
+            I_trans,V_trans,tn=myFunctionDataProcess.RealTimeFilterFundamental(Iabc,Vabc,tabc,nargout=3)
 
 
 
