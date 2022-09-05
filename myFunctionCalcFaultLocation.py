@@ -78,7 +78,7 @@ def smooth(y, box_pts):
     return y_smooth 
 
 def removeOutliers(x, y):
-    y = np.array(y[:,0])
+    y = np.array(y)
     x = np.array(x)
     mean = np.mean(y)
     standard_deviation = np.std(y)
