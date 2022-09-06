@@ -21,11 +21,11 @@ def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,*args,**kwargs):
     Iabc=Iabc.transpose()
     I_wd=Iabc
     y=np.fft.fft(I_wd.transpose(), axis=0)
-    x = fftfreq(len(I_wd[0]), 1 / 4000)
+    x = fftfreq(len(I_wd[0]), 1 / 10000)
     ytrans=np.zeros((len(I_wd[0]),3))
     ytrans = ytrans.astype('complex64')
-    ytrans[4:100,:]=y[4:100,:]
-    ytrans[-1-99: -1-3+1,:]=y[-1-99:-1-3+1,:]
+    ytrans[15:len(y[:,0])-10,:]=y[15:len(y[:,0])-10,:]
+    # ytrans[-1-1000:-1-9+1,:]=y[-1-1000:-1-9+1,:]
     Itr_wd=ifft(ytrans, axis=0).real
     I_trans = Itr_wd.transpose()
 
@@ -33,14 +33,17 @@ def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,*args,**kwargs):
     Vabc=Vabc.transpose()
     V_wd=Vabc
     y=np.fft.fft(V_wd.transpose(), axis=0)
-    x = fftfreq(len(V_wd[0]), 1 / 4000)
+    x = fftfreq(len(V_wd[0]), 1 / 10000)
     ytrans=np.zeros((len(V_wd[0]),3))
     ytrans = ytrans.astype('complex64')
-    ytrans[4:100,:]=y[4:100,:]
-    ytrans[-1-99: -1-3+1,:]=y[-1-99:-1-3+1,:]
+    ytrans[15:len(y[:,0])-10,:]=y[15:len(y[:,0])-10,:]
+    # ytrans[: -1-9+1,:]=y[:-1-9+1,:]
     Vtr_wd=ifft(ytrans, axis=0).real
     V_trans = Vtr_wd.transpose()
-    
+
+    I_trans=I_trans[:,200:]
+    V_trans=V_trans[:,200:]
+    t=t[200:]
 
     return I_trans,V_trans,t
 
@@ -58,7 +61,8 @@ def FilterFundamental(f=None,Ts=None,Iabc=None,Vabc=None,t=None,*args,**kwargs):
 
         # Current
         I_wd=Iabc[:,n:wd+n+1]
-        y=fft(I_wd.transpose(), axis=0)
+        y=fft(I_wd, axis=0)
+        x = fftfreq(len(I_wd[0]), 1 / 10000)
         ytrans=np.zeros((len(I_wd[0]),3))
         ytrans = ytrans.astype('complex64')
 

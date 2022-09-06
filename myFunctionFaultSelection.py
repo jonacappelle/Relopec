@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.fft import fft, ifft
+from scipy.fft import fft, ifft, fftfreq
 import copy
 import matplotlib.pyplot as plt
 # from numba import jit, objmode
@@ -48,6 +48,7 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*a
     # Maybe this can be optimized
     # with objmode(Ifft='complex128[:]'):
     Ifft=fft(wdI)
+    x = fftfreq(len(wdI[:,0]), 1 / 10000)
     # with objmode(Vfft='complex128[:]'):
     Vfft=fft(wdV)
 
@@ -98,16 +99,6 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*a
         print(estFaultIncepTime)
         print("estFaultStableTime:", end = ' ')
         print(estFaultStableTime)
-    
-    # global temp
-    # temp = temp + 1
-
-    # if temp > 100:
-    #     plt.scatter(t, min(Z))
-    #     plt.scatter(t, minPreviousZ)
-    #     plt.pause(0.00001)
-
-    #     temp = 0
     
     return estFaultType,estFaultIncepTime,estFaultStableTime, min(Z)
 
