@@ -39,8 +39,8 @@ estFaultType = None
 estFaultStableTime = None
 
 # Making arrays for k and fictitious fault impedance
-# k=np.arange(0.01,0.99+0.005,0.005)
-k=np.arange(0.01,0.99+0.001,0.001)
+k=np.arange(0.01,0.99+0.005,0.005)
+# k=np.arange(0.01,0.99+0.001,0.001)
 LfFictArray=np.zeros((len(k),1))
 RfFictArray=np.zeros((len(k),1))
 
@@ -215,15 +215,26 @@ if __name__=="__main__":
             # the Z from 200 samples earlier
             previousZarray = np.zeros(200)
 
+            estFaultIncepTime_first = True
+
             # Fault detection loop
             while(1):
 
                 start = time.time()
 
                 # Do the calculations on the updated data with the latest 200st array for comparing Z
-                estFaultType,estFaultIncepTime,estFaultStableTime, Z = myFunctionFaultSelection.RealTimeFaultIndentification(Iabc, Vabc, tabc[-1], previousZarray[-200])  
+                estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = myFunctionFaultSelection.RealTimeFaultIndentification(Iabc, Vabc, tabc[-1], previousZarray[-200])  
+                if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
+                    estFaultIncepTime = estFaultIncepTime_temp
+                    estFaultIncepTime_first = False
                 if estFaultType != 0:
                     print("Fault detected!")
+                    print("estFaultType:", end = ' ')
+                    print(estFaultType)
+                    print("estFaultIncepTime:", end = ' ')
+                    print(estFaultIncepTime)
+                    print("estFaultStableTime:", end = ' ')
+                    print(estFaultStableTime)
                     break
 
                 # Make last place in array free
@@ -237,7 +248,7 @@ if __name__=="__main__":
                 Vabc[-1] = V
                 tabc[-1] = t
 
-                if len(tabc_full) <= 1000:
+                if len(tabc_full) <= 800:
                     # Append data to full array if not full yet
                     Iabc_full = np.vstack((Iabc_full, I))
                     Vabc_full = np.vstack((Vabc_full, V))
@@ -257,10 +268,35 @@ if __name__=="__main__":
                 end = time.time()
                 # print((end -start)*1000) # in milliseconds
 
+            # Get some more data
+            for x in range(100):
+
+                t, V, I = getData()
+
+                Iabc_full = np.roll(Iabc_full, -1, axis=0)
+                Vabc_full = np.roll(Vabc_full, -1, axis=0)
+                tabc_full = np.roll(tabc_full, -1, axis=0)
+                Iabc_full[-1] = I
+                Vabc_full[-1] = V
+                tabc_full[-1] = t
+
+                x=x+1
+
             # Second part
             print("Filter fundamental")
             I_trans,V_trans,tn=myFunctionDataProcess.RealTimeFilterFundamental(Iabc_full,Vabc_full,tabc_full,nargout=3)
             # I_trans,V_trans,tn=myFunctionDataProcess.FilterFundamental(f,Ts,Iabc_full,Vabc_full,tabc_full,nargout=3)
+
+            # [I_trans, V_trans, tn] = read_data("test123")
+
+            # plt.plot(tabc_full, Vabc_full[:,0])
+            # plt.plot(tn, V_trans[0])
+            # plt.show()
+            # start = np.argwhere(tn>=estFaultStableTime-0.04)[0][0]
+            # stop = np.argwhere(tn>=estFaultStableTime+0.001)[0][0]
+            # tn = tn[start:stop]
+            # V_trans = V_trans[:,start:stop]
+            # I_trans = I_trans[:,start:stop]
 
             plt.plot(tabc_full, Vabc_full[:,0])
             plt.plot(tn, V_trans[0])

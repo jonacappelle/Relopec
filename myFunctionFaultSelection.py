@@ -93,12 +93,6 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*a
                     if Zab > (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca< (0.5*Zbase):
                         estFaultType=4
 
-        print("estFaultType:", end = ' ')
-        print(estFaultType)
-        print("estFaultIncepTime:", end = ' ')
-        print(estFaultIncepTime)
-        print("estFaultStableTime:", end = ' ')
-        print(estFaultStableTime)
     
     return estFaultType,estFaultIncepTime,estFaultStableTime, min(Z)
 
