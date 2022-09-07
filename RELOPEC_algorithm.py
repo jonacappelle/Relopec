@@ -248,7 +248,7 @@ if __name__=="__main__":
                 Vabc[-1] = V
                 tabc[-1] = t
 
-                if len(tabc_full) <= 800:
+                if len(tabc_full) <= 900:
                     # Append data to full array if not full yet
                     Iabc_full = np.vstack((Iabc_full, I))
                     Vabc_full = np.vstack((Vabc_full, V))
@@ -292,25 +292,24 @@ if __name__=="__main__":
             # plt.plot(tabc_full, Vabc_full[:,0])
             # plt.plot(tn, V_trans[0])
             # plt.show()
-            # start = np.argwhere(tn>=estFaultStableTime-0.04)[0][0]
-            # stop = np.argwhere(tn>=estFaultStableTime+0.001)[0][0]
-            # tn = tn[start:stop]
-            # V_trans = V_trans[:,start:stop]
-            # I_trans = I_trans[:,start:stop]
+            start = np.argwhere(tn>=estFaultIncepTime)[0][0]
+            tn = tn[start:]
+            V_trans = V_trans[:,start:]
+            I_trans = I_trans[:,start:]
 
             plt.plot(tabc_full, Vabc_full[:,0])
             plt.plot(tn, V_trans[0])
             plt.show()
 
             print("Start fault detection")
-            # pool = mp.Pool(processes=mp.cpu_count(), initializer=findFaultInit, initargs=(I_trans, V_trans, k, tn, estFaultType, estFaultStableTime))
-            # LfFictArray = pool.map(findFault, np.arange(0,len(k)))
+            pool = mp.Pool(processes=mp.cpu_count(), initializer=findFaultInit, initargs=(I_trans, V_trans, k, tn, estFaultType, estFaultStableTime))
+            LfFictArray = pool.map(findFault, np.arange(0,len(k)))
 
-            for n in np.arange(0,len(k)-1,1):
-                vF,i2,X=myFunctionCalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
-                LfFict,RfFict,ZfFict=myFunctionCalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
-                LfFictArray[n]=LfFict
-                print(n)
+            # for n in np.arange(0,len(k)-1,1):
+            #     vF,i2,X=myFunctionCalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
+            #     LfFict,RfFict,ZfFict=myFunctionCalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
+            #     LfFictArray[n]=LfFict
+            #     print(n)
 
             # Find zero crossing and hence the distance to the fault
             print("Find zero cross")

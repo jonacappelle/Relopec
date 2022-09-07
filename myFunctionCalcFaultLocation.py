@@ -66,6 +66,8 @@ def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTi
 
     # Find the overal inducance and resistance by taking the average over one period (0.02 seconds for 50 hertz) this step requires us to know the time of fault inception
     index1=np.argwhere(tn >= estFaultStableTime - 0.02)
+    if(index1[0][0] == 0 ):
+        print("Choose a bigger window")
     index2=np.argwhere(tn >= estFaultStableTime)
 
     LfFict=np.mean(ZfFict[0,index1[0][0]:index2[0][0]])
@@ -78,7 +80,8 @@ def smooth(y, box_pts):
     return y_smooth 
 
 def removeOutliers(x, y):
-    y = np.array(y[:,0])
+    # y = np.array(y[:,0])
+    y = np.array(y)
     x = np.array(x)
     mean = np.mean(y)
     standard_deviation = np.std(y)
