@@ -59,3 +59,10 @@ remoteL=concat([0.8492077756084467,0.8492077756084467])
 
 Rg=remoteR[1]
 Lg=remoteL[1] / wb
+
+
+number_of_k = 50
+
+k_start = 0.01
+k = np.arange(k_start,1-k_start+(1/number_of_k),(1/number_of_k))
+# k=np.arange(0.01,0.99+0.001,0.001)

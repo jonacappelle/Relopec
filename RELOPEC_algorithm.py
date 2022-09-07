@@ -2,14 +2,14 @@ from tempfile import tempdir
 import scipy.io
 import findData
 from precision import Precision
-import myFunctionDataProcess
+import DataProcess
 import precision
 import pandas as pd
 from BasicParameters import *
-import myFunctionFaultSelection
+import FaultSelection
 import numpy as np
-import myFunctionCalcNetwork
-import myFunctionCalcFaultLocation
+import CalcNetwork
+import CalcFaultLocation
 import matplotlib.pyplot as plt
 import timeit
 import time
@@ -33,14 +33,12 @@ USE_SIMULATED_DATA = True
 # Global variables
 I_trans = None
 V_trans = None
-k = None
+# k = None
 tn = None
 estFaultType = None
 estFaultStableTime = None
 
 # Making arrays for k and fictitious fault impedance
-k=np.arange(0.01,0.99+0.005,0.005)
-# k=np.arange(0.01,0.99+0.001,0.001)
 LfFictArray=np.zeros((len(k),1))
 RfFictArray=np.zeros((len(k),1))
 
@@ -77,9 +75,9 @@ def findFault(n):
     global LfFictArray
     global RfFictArray
 
-    vF,i2,X=myFunctionCalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
+    vF,i2,X=CalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
 
-    LfFict,RfFict,ZfFict=myFunctionCalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
+    LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
 
     # LfFictArray[n]=LfFict    # This is now in parallel
     return LfFict
@@ -223,7 +221,7 @@ if __name__=="__main__":
                 start = time.time()
 
                 # Do the calculations on the updated data with the latest 200st array for comparing Z
-                estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = myFunctionFaultSelection.RealTimeFaultIndentification(Iabc, Vabc, tabc[-1], previousZarray[-200])  
+                estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification(Iabc, Vabc, tabc[-1], previousZarray[-200])  
                 if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
                     estFaultIncepTime = estFaultIncepTime_temp
                     estFaultIncepTime_first = False
@@ -284,8 +282,8 @@ if __name__=="__main__":
 
             # Second part
             print("Filter fundamental")
-            I_trans,V_trans,tn=myFunctionDataProcess.RealTimeFilterFundamental(Iabc_full,Vabc_full,tabc_full,nargout=3)
-            # I_trans,V_trans,tn=myFunctionDataProcess.FilterFundamental(f,Ts,Iabc_full,Vabc_full,tabc_full,nargout=3)
+            I_trans,V_trans,tn=DataProcess.RealTimeFilterFundamental(Iabc_full,Vabc_full,tabc_full,nargout=3)
+            # I_trans,V_trans,tn=DataProcess.FilterFundamental(f,Ts,Iabc_full,Vabc_full,tabc_full,nargout=3)
 
             # [I_trans, V_trans, tn] = read_data("test123")
 
@@ -297,23 +295,23 @@ if __name__=="__main__":
             V_trans = V_trans[:,start:]
             I_trans = I_trans[:,start:]
 
-            plt.plot(tabc_full, Vabc_full[:,0])
-            plt.plot(tn, V_trans[0])
-            plt.show()
+            # plt.plot(tabc_full, Vabc_full[:,0])
+            # plt.plot(tn, V_trans[0])
+            # plt.show()
 
-            print("Start fault detection")
-            pool = mp.Pool(processes=mp.cpu_count(), initializer=findFaultInit, initargs=(I_trans, V_trans, k, tn, estFaultType, estFaultStableTime))
-            LfFictArray = pool.map(findFault, np.arange(0,len(k)))
+            # print("Start fault detection")
+            # pool = mp.Pool(processes=mp.cpu_count(), initializer=findFaultInit, initargs=(I_trans, V_trans, k, tn, estFaultType, estFaultStableTime))
+            # LfFictArray = pool.map(findFault, np.arange(0,len(k)))
 
-            # for n in np.arange(0,len(k)-1,1):
-            #     vF,i2,X=myFunctionCalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
-            #     LfFict,RfFict,ZfFict=myFunctionCalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
-            #     LfFictArray[n]=LfFict
-            #     print(n)
+            for n in np.arange(0,len(k)-1,1):
+                vF,i2,X=CalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
+                LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
+                LfFictArray[n]=LfFict
+                print(n)
 
             # Find zero crossing and hence the distance to the fault
             print("Find zero cross")
-            zeroCross1=myFunctionCalcFaultLocation.findZeroCross(LfFictArray,k)
+            zeroCross1=CalcFaultLocation.findZeroCross(LfFictArray,k)
             print("FaultLocData:", end = ' ')
             faultLocData = 0.8
             print(faultLocData) # Dit zou 0.3 moeten zijn voor "data.mat" en 0.8 voor "data2.mat"
@@ -324,7 +322,7 @@ if __name__=="__main__":
         # Fault identification and classification
     #     print("Detect fault")
     #     start = time.time()
-    #     estFaultType,estFaultIncepTime,estFaultStableTime=myFunctionFaultSelection.FaultIndentification(Iabc,Vabc,t,f,Ts,Zbase)
+    #     estFaultType,estFaultIncepTime,estFaultStableTime=FaultSelection.FaultIndentification(Iabc,Vabc,t,f,Ts,Zbase)
     #     end = time.time()
     #     print("Time to detect fault:", end = ' ')
     #     print(end-start)
@@ -335,7 +333,7 @@ if __name__=="__main__":
     #     #########################################################
     #     # Filter out fundamental frequency
     #     print("Filter fundamental")
-    #     I_trans,V_trans,tn=myFunctionDataProcess.FilterFundamental(f,Ts,Iabc,Vabc,t,nargout=3)
+    #     I_trans,V_trans,tn=DataProcess.FilterFundamental(f,Ts,Iabc,Vabc,t,nargout=3)
     #     # Small variations on I_trans and V_trans, probably due to different way of calculation between Matlab and Python (some rounding maybe?)
     #     # These variations get bigger since future calculations use these values
         
@@ -354,7 +352,7 @@ if __name__=="__main__":
 
     # # Find zero crossing and hence the distance to the fault
     # print("Find zero cross")
-    # zeroCross1=myFunctionCalcFaultLocation.findZeroCross(LfFictArray,k)
+    # zeroCross1=CalcFaultLocation.findZeroCross(LfFictArray,k)
     # print("FaultLocData:", end = ' ')
     # faultLocData = 0.8
     # print(faultLocData) # Dit zou 0.3 moeten zijn voor "data.mat" en 0.8 voor "data2.mat"
