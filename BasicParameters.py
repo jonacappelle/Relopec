@@ -61,7 +61,7 @@ Rg=remoteR[1]
 Lg=remoteL[1] / wb
 
 
-number_of_k = 50
+number_of_k = 200
 
 k_start = 0.01
 k = np.arange(k_start,1-k_start+(1/number_of_k),(1/number_of_k))

@@ -169,7 +169,65 @@ def getData():
 
         return t, V, I
 
+def initDataBuffers():
 
+    # Get the first set of data
+    tabc, Vabc, Iabc = getData()
+
+    # Fill array for first time
+    sample_cnt = 0
+    while(sample_cnt <= 198):
+        t, V, I = getData()
+        Iabc = np.vstack((Iabc, I))
+        Vabc = np.vstack((Vabc, V))
+        tabc = np.append(tabc, t)
+        sample_cnt = sample_cnt + 1
+
+    # Make huge array where we keep track of previous data
+    tabc_full = copy.copy(tabc)
+    Vabc_full = copy.copy(Vabc)
+    Iabc_full = copy.copy(Iabc)
+
+    return tabc, Vabc, Iabc, tabc_full, Vabc_full, Iabc_full
+
+
+def updateData(tabc, Vabc, Iabc, tabc_full, Vabc_full, Iabc_full):
+
+    # Make last place in array free
+    Iabc = np.roll(Iabc, -1, axis=0)
+    Vabc = np.roll(Vabc, -1, axis=0)
+    tabc = np.roll(tabc, -1, axis=0)
+
+    # Fill last place with new data
+    t, V, I = getData() # Data is comming in at 4kHz or faster from C program (checked)
+    Iabc[-1] = I
+    Vabc[-1] = V
+    tabc[-1] = t
+
+    if len(tabc_full) <= 900:
+        # Append data to full array if not full yet
+        Iabc_full = np.vstack((Iabc_full, I))
+        Vabc_full = np.vstack((Vabc_full, V))
+        tabc_full = np.append(tabc_full, t)
+    else:
+        Iabc_full = np.roll(Iabc_full, -1, axis=0)
+        Vabc_full = np.roll(Vabc_full, -1, axis=0)
+        tabc_full = np.roll(tabc_full, -1, axis=0)
+        Iabc_full[-1] = I
+        Vabc_full[-1] = V
+        tabc_full[-1] = t
+
+    return tabc, Vabc, Iabc, tabc_full, Vabc_full, Iabc_full
+
+
+def printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime):
+    print("Fault detected!")
+    print("estFaultType:", end = ' ')
+    print(estFaultType)
+    print("estFaultIncepTime:", end = ' ')
+    print(estFaultIncepTime)
+    print("estFaultStableTime:", end = ' ')
+    print(estFaultStableTime)
 
 
 # MAIN SCRIPT OF THE ALGORITHM
@@ -193,22 +251,9 @@ if __name__=="__main__":
 
         if USE_IEC61850_DATA == True or USE_SIMULATED_DATA == True:
 
-            # Get the first set of data
-            tabc, Vabc, Iabc = getData()
+            # Initialize data buffer and fill with 200 samples
+            tabc, Vabc, Iabc, tabc_full, Vabc_full, Iabc_full = initDataBuffers()
 
-            # Fill array for first time
-            sample_cnt = 0
-            while(sample_cnt <= 198):
-                t, V, I = getData()
-                Iabc = np.vstack((Iabc, I))
-                Vabc = np.vstack((Vabc, V))
-                tabc = np.append(tabc, t)
-                sample_cnt = sample_cnt + 1
-
-            # Make huge array where we keep track of previous data
-            tabc_full = copy.copy(tabc)
-            Vabc_full = copy.copy(Vabc)
-            Iabc_full = copy.copy(Iabc)
 
             # the Z from 200 samples earlier
             previousZarray = np.zeros(200)
@@ -223,41 +268,16 @@ if __name__=="__main__":
                 # Do the calculations on the updated data with the latest 200st array for comparing Z
                 estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification(Iabc, Vabc, tabc[-1], previousZarray[-200])  
                 if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
+                    # Only store estFaultIncepTime's first value
                     estFaultIncepTime = estFaultIncepTime_temp
                     estFaultIncepTime_first = False
                 if estFaultType != 0:
-                    print("Fault detected!")
-                    print("estFaultType:", end = ' ')
-                    print(estFaultType)
-                    print("estFaultIncepTime:", end = ' ')
-                    print(estFaultIncepTime)
-                    print("estFaultStableTime:", end = ' ')
-                    print(estFaultStableTime)
+                    printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime)
                     break
 
-                # Make last place in array free
-                Iabc = np.roll(Iabc, -1, axis=0)
-                Vabc = np.roll(Vabc, -1, axis=0)
-                tabc = np.roll(tabc, -1, axis=0)
+                tabc, Vabc, Iabc, tabc_full, Vabc_full, Iabc_full = updateData(tabc, Vabc, Iabc, tabc_full, Vabc_full, Iabc_full)
 
-                # Fill last place with new data
-                t, V, I = getData() # Data is comming in at 4kHz or faster from C program (checked)
-                Iabc[-1] = I
-                Vabc[-1] = V
-                tabc[-1] = t
 
-                if len(tabc_full) <= 900:
-                    # Append data to full array if not full yet
-                    Iabc_full = np.vstack((Iabc_full, I))
-                    Vabc_full = np.vstack((Vabc_full, V))
-                    tabc_full = np.append(tabc_full, t)
-                else:
-                    Iabc_full = np.roll(Iabc_full, -1, axis=0)
-                    Vabc_full = np.roll(Vabc_full, -1, axis=0)
-                    tabc_full = np.roll(tabc_full, -1, axis=0)
-                    Iabc_full[-1] = I
-                    Vabc_full[-1] = V
-                    tabc_full[-1] = t
 
                 # Add Z to previous array and roll
                 previousZarray = np.roll(previousZarray, -1)
@@ -303,11 +323,26 @@ if __name__=="__main__":
             # pool = mp.Pool(processes=mp.cpu_count(), initializer=findFaultInit, initargs=(I_trans, V_trans, k, tn, estFaultType, estFaultStableTime))
             # LfFictArray = pool.map(findFault, np.arange(0,len(k)))
 
+            start = time.time()
+
             for n in np.arange(0,len(k)-1,1):
+                start1 = time.time()
                 vF,i2,X=CalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
+                stop1 = time.time()
+
+                start2 = time.time()
                 LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
+                stop2 = time.time()
                 LfFictArray[n]=LfFict
                 print(n)
+
+            stop = time.time()
+
+            print(f"time1 {stop1-start1}, time2 {stop2-start2}, total: {stop-start}")
+            
+            
+
+            # print(f"Timeeeee: {stop-start}")
 
             # Find zero crossing and hence the distance to the fault
             print("Find zero cross")

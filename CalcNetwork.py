@@ -8,10 +8,12 @@ from numpy.linalg import multi_dot
 from numpy.linalg import inv
 import timeit
 import time
+from numba import njit, jit, prange
 
 if __name__ == '__main__':
     pass
 
+@njit
 def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C_line=None,Ts=None,tn=None,Lg=None,Rg=None,*args,**kwargs):
 
     #SECTION LINE PARAMETERS 
@@ -21,7 +23,6 @@ def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C
     # after the fault
     L2=(1-k)*L_line
     R2=(1-k)*R_line
-    
     i2=I_trans
     vF = np.zeros((3,len(I_trans[0])))   
 
@@ -36,11 +37,19 @@ def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C
     temp1 = (2/3)*vF[0,:] - vF[1,:]/3 - vF[2,:]/3
     temp2 = - vF[0,:]/3 + (2/3)*vF[1,:] - vF[2,:]/3
     temp3 = - vF[0,:]/3 - vF[1,:]/3 + (2/3)*vF[2,:]
-    temp = [temp1, temp2, temp3]
-    B=np.dot((1 / (L2 + Lg)),temp)
+
+    temp = np.vstack((temp1, temp2, temp3))
+    B=(1 / (L2 + Lg)) * temp
+
+    # temp = [temp1, temp2, temp3]
+    # B=np.dot((1 / (L2 + Lg)),temp)
+
+
     I=np.eye(3)
 
     for n in np.arange(1,len(tn)):
-        X[:,n]= np.dot((np.linalg.inv((I-A*Ts/2))),(   np.dot(((I+A*Ts/2)),(X[:,n-1]))  +   ((B[:,n] + B[:,n-1])*Ts/2)  ))
+        # X[:,n]= np.dot(  (np.linalg.inv((I-A*Ts/2))),(   np.dot(((I+A*Ts/2)),(X[:,n-1]))  +   ((B[:,n] + B[:,n-1])*Ts/2)  )   )
+        X[:,n]=   np.linalg.inv((I-A*Ts/2))  @    (  (I+A*Ts/2) @ X[:,n-1]  +   ((B[:,n] + B[:,n-1]) * (Ts/2))  )   
+
     
     return vF,i2,X

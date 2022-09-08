@@ -10,18 +10,25 @@ import matplotlib.pyplot as plt
 import math
 import timeit
 import time
-# from numba import njit, jit, prange
+from numba import njit, jit, prange
 
 if __name__ == '__main__':
     pass
 
+@njit
 def calculate_optimized(iF, vF, Ts, tn):
     ZfFict=np.zeros((2,len(tn)))
 
     for n in np.arange(1,len(tn) - 1,1):
-        A_matrix=[[iF[n] - iF[n - 1],np.dot((iF[n - 1] + iF[n]),Ts) / 2], [iF[n + 1] - iF[n],np.dot((iF[n + 1] + iF[n]),Ts) / 2]]
-        B_matrix=[[np.dot((vF[n - 1] + vF[n]),(Ts/2))], [np.dot((vF[n] + vF[n + 1]),(Ts/2))]]
-        ZfFict[:,[n]]= np.dot(np.linalg.pinv(A_matrix),B_matrix) # Compute pseudo inverse of matrix if it can't be inversed
+        A_matrix=np.array( ((iF[n] - iF[n - 1]), (((iF[n - 1] + iF[n]) * Ts) / 2), (iF[n + 1] - iF[n]), (((iF[n + 1] + iF[n]) * Ts) / 2))  )
+        B_matrix=np.array(( ((vF[n - 1] + vF[n]) * (Ts/2)), ((vF[n] + vF[n + 1]) * (Ts/2)) ))
+        A_matrix = np.reshape(A_matrix, (2,2))
+
+        ZfFict[:,n]= (np.linalg.pinv(A_matrix) @ B_matrix) # Compute pseudo inverse of matrix if it can't be inversed
+
+        # A_matrix=[[iF[n] - iF[n - 1],np.dot((iF[n - 1] + iF[n]),Ts) / 2], [iF[n + 1] - iF[n],np.dot((iF[n + 1] + iF[n]),Ts) / 2]]
+        # B_matrix=[[np.dot((vF[n - 1] + vF[n]),(Ts/2))], [np.dot((vF[n] + vF[n + 1]),(Ts/2))]]
+        # ZfFict[:,[n]]= np.dot(np.linalg.pinv(A_matrix),B_matrix) # Compute pseudo inverse of matrix if it can't be inversed
 
     return ZfFict
 
@@ -62,7 +69,10 @@ def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTi
                         vF=copy.copy(vFa)
                         iF=(iaBf - iaAf)
     
-    ZfFict = calculate_optimized(iF, vF, Ts, tn)
+    # start = time.time()
+    ZfFict = calculate_optimized(np.array(iF), np.array(vF), Ts, np.array(tn))
+    # stop = time.time()
+    # print(f"Time calculate_optimized: {stop-start}")
 
     # Find the overal inducance and resistance by taking the average over one period (0.02 seconds for 50 hertz) this step requires us to know the time of fault inception
     index1=np.argwhere(tn >= estFaultStableTime - 0.02)
