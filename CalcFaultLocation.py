@@ -15,7 +15,7 @@ from numba import njit, jit, prange
 if __name__ == '__main__':
     pass
 
-@njit
+@njit(cache=True)
 def calculate_optimized(iF, vF, Ts, tn):
     ZfFict=np.zeros((2,len(tn)))
 
@@ -32,9 +32,13 @@ def calculate_optimized(iF, vF, Ts, tn):
 
     return ZfFict
 
+# @njit(cache=True)
 def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTime=None,*args,**kwargs):
     
     iF = None
+
+    LfFict = None
+    RfFict = None
 
     # voltage at the (assumed) fault location
     vFa=vF[0,:]
@@ -50,7 +54,7 @@ def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTi
     icAf=X[2,:]
     
     if 1 == (FaultType):
-        vF=copy.copy(vFb)
+        vF=vFb.copy()
         iF=(ibBf - ibAf)
     else:
         if 2 == (FaultType):
@@ -66,11 +70,11 @@ def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTi
                     iF=(icBf - icAf) - (iaBf - iaAf)
                 else:
                     if 5 == (FaultType):
-                        vF=copy.copy(vFa)
+                        vF=vFa.copy()
                         iF=(iaBf - iaAf)
-    
+
     # start = time.time()
-    ZfFict = calculate_optimized(np.array(iF), np.array(vF), Ts, np.array(tn))
+    ZfFict = calculate_optimized(iF, vF, Ts, tn)
     # stop = time.time()
     # print(f"Time calculate_optimized: {stop-start}")
 

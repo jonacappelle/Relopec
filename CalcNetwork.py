@@ -13,7 +13,7 @@ from numba import njit, jit, prange
 if __name__ == '__main__':
     pass
 
-@njit
+@njit(cache=True)
 def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C_line=None,Ts=None,tn=None,Lg=None,Rg=None,*args,**kwargs):
 
     #SECTION LINE PARAMETERS 

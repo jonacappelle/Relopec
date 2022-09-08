@@ -2,19 +2,18 @@ import numpy as np
 from scipy.fft import fft, ifft, fftfreq
 import copy
 import matplotlib.pyplot as plt
-# from numba import jit, objmode
+from numba import njit, jit, prange
 
 if __name__ == '__main__':
     pass
 
+
+
 # @jit(nopython=False)
-def fft(a):
+def calculate_fft(a):
     return np.fft.fft(a, axis=0)
 
-
-temp = 0
-
-# @jit(nopython=True)
+# @jit
 def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*args,**kwargs):
     
     f=50
@@ -47,10 +46,10 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*a
 
     # Maybe this can be optimized
     # with objmode(Ifft='complex128[:]'):
-    Ifft=fft(wdI)
-    x = fftfreq(len(wdI[:,0]), 1 / 10000)
+    Ifft=calculate_fft(wdI)
+    # x = fftfreq(len(wdI[:,0]), 1 / 10000)
     # with objmode(Vfft='complex128[:]'):
-    Vfft=fft(wdV)
+    Vfft=calculate_fft(wdV)
 
     I = I.astype('complex64')
     V = V.astype('complex64')
