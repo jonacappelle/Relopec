@@ -70,4 +70,6 @@ k_start = 0.01
 k = np.arange(k_start,1-k_start+(1/number_of_k),(1/number_of_k))
 # k=np.arange(0.01,0.99+0.001,0.001)
 
-Zarray_number_of_places = 200
+bufferArraysLength = 200
+numberOfExtraSamplesAfterFault = 100
+

@@ -58,7 +58,7 @@ def initDataBuffers(dataQueue):
 
     # Fill array for first time
     sample_cnt = 0
-    while(sample_cnt <= 198):
+    while(sample_cnt <= bufferArraysLength - 2): # with len of 200, only take 198
         t, V, I = getData(dataQueue)
         Iabc = np.vstack((Iabc, I))
         Vabc = np.vstack((Vabc, V))
@@ -155,6 +155,7 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
     # V = np.array(V1, V2, V3)
     # I = np.array(I1, I2, I3)
 
+        # Buffer the data to transfer to main algorithm
         dataQueue.put(np.array((t_resampled[MatlabSimDataSetIndex,0], Vabc_resampled[MatlabSimDataSetIndex], Iabc_resampled[MatlabSimDataSetIndex])))
         print(f"Update getRealTimeData Thread {t_resampled[MatlabSimDataSetIndex,0]}, {Vabc_resampled[MatlabSimDataSetIndex]}, {Iabc_resampled[MatlabSimDataSetIndex]}")
 

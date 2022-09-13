@@ -34,8 +34,9 @@ estFaultStableTime = None
 LfFictArray=np.zeros((len(k),1))
 RfFictArray=np.zeros((len(k),1))
 
-# create a queue
+# Create a queue for buffering incomming data
 dataQueue = queue.Queue()
+# Notify thread when to stop capturing data
 faultDetectedEvent = Event()
 
 try:
@@ -53,7 +54,7 @@ if __name__=="__main__":
     tabc, Vabc, Iabc = initDataBuffers(dataQueue)
 
     # the Z from 200 samples earlier
-    previousZarray = np.zeros(Zarray_number_of_places)
+    previousZarray = np.zeros(bufferArraysLength)
 
     estFaultIncepTime_first = True
 
@@ -70,7 +71,7 @@ if __name__=="__main__":
         counter = counter + 1
 
         # Do the calculations on the updated data with the latest 200st array for comparing Z
-        estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification(Iabc[-Zarray_number_of_places:], Vabc[-Zarray_number_of_places:], tabc[-1], previousZarray[-Zarray_number_of_places])  
+        estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification(Iabc[-bufferArraysLength:], Vabc[-bufferArraysLength:], tabc[-1], previousZarray[-bufferArraysLength])  
         if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
             # Only store estFaultIncepTime's first value
             estFaultIncepTime = estFaultIncepTime_temp
@@ -88,8 +89,8 @@ if __name__=="__main__":
     end = time.time()
     print(f"Time: {(end -start)*1000} Counter: {counter}") # in milliseconds
 
-    # Get some more data
-    tabc, Vabc, Iabc = addData(tabc, Vabc, Iabc, 100, dataQueue)
+    # Get some more data after fault has occurred
+    tabc, Vabc, Iabc = addData(tabc, Vabc, Iabc, numberOfExtraSamplesAfterFault, dataQueue)
 
     faultDetectedEvent.set()
 
