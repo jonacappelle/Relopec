@@ -1,11 +1,8 @@
 from tempfile import tempdir
-import scipy.io
-import findData
 from precision import Precision
 import DataProcess
 import precision
 import pandas as pd
-from BasicParameters import *
 import FaultSelection
 import numpy as np
 import CalcNetwork
@@ -13,21 +10,17 @@ import CalcFaultLocation
 import matplotlib.pyplot as plt
 import timeit
 import time
-import tqdm
-import multiprocessing as mp
-from itertools import product
-from itertools import repeat
-import pickle
-import os
-from ctypes import *
-import sys
-import struct
-import random
-from scipy import signal
-import copy
+import _thread as thread
+from threading import Thread, Event
+import queue
+from time import sleep
 
-USE_IEC61850_DATA = False
-USE_SIMULATED_DATA = True
+# Own libraries
+from BasicParameters import *
+from ctypes import *
+from getData import *
+from Varia import *
+
 
 # Global variables
 I_trans = None
@@ -41,286 +34,107 @@ estFaultStableTime = None
 LfFictArray=np.zeros((len(k),1))
 RfFictArray=np.zeros((len(k),1))
 
-# Progress bar
-pbar = tqdm.tqdm(total=200)
-def update_progress(*a):
-    pbar.update()
+# create a queue
+dataQueue = queue.Queue()
+faultDetectedEvent = Event()
 
-def findFaultInit(I_trans_local, V_trans_local, k_local, tn_local, estFaultType_local, estFaultStableTime_local):
-    global I_trans 
-    I_trans = I_trans_local
-    global V_trans 
-    V_trans = V_trans_local
-    global k 
-    k = k_local
-    global tn
-    tn = tn_local
-    global estFaultType
-    estFaultType = estFaultType_local
-    global estFaultStableTime
-    estFaultStableTime = estFaultStableTime_local
-    return 
-
-def findFault(n):
-
-    update_progress()
-
-    global I_trans
-    global V_trans
-    global k
-    global tn
-    global estFaultType
-    global estFaultStableTime
-    global LfFictArray
-    global RfFictArray
-
-    vF,i2,X=CalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
-
-    LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
-
-    # LfFictArray[n]=LfFict    # This is now in parallel
-    return LfFict
-
-def checkSettings():
-    if USE_IEC61850_DATA == True:
-        print("USE_IEC61850_DATA")
-    if USE_SIMULATED_DATA == True:
-        print("USE_SIMULATED_DATA")
-
-def write_data(name, data):
-
-    with open(name, 'wb') as f:
-        pickle.dump(data, f)
-
-    print("Data saved to file")
-
-def  read_data(name):
-
-    with open(name, 'rb') as f:
-        data = pickle.load(f)
-
-    return data
-
-def tests_matlab_python():
-    #########################################
-    # Matlab to python test
-    array = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 , 12])
-
-    print("---------")
-    print(array[3:8])
-    # First argument: - 1
-    # Last argument: keep
-    print(array[1:-1-2+1])
-    # First argument: - 1
-    # Last argument: + 1
-    print(array[-1-3:-1-1+1])
-    # Keep first argument with end
-    # Last argument: + 1
-    for i in np.arange(0,5):
-        print(i)
-    print("---------")
-    #########################################
-    os.system("pause")
-
-# Dataset
-MatlabSimDataSet = scipy.io.loadmat('data2.mat')
-MatlabSimDataSetIndex = 0
-
-def getData():
-
-    if USE_SIMULATED_DATA == True:
-
-        global MatlabSimDataSetIndex
-        MatlabSimDataSetIndex = MatlabSimDataSetIndex + 1
-
-        t = MatlabSimDataSet['t']
-        Iabc = MatlabSimDataSet['Iabc'].transpose()
-        Vabc = MatlabSimDataSet['Vabc'].transpose()
-
-        t_resampled = t#[0:len(t):2]
-        Iabc_resampled = Iabc#[0:len(t):2]
-        Vabc_resampled = Vabc#[0:len(t):2]
-
-        return t_resampled[MatlabSimDataSetIndex,0], Vabc_resampled[MatlabSimDataSetIndex], Iabc_resampled[MatlabSimDataSetIndex]
-
-
-    if USE_IEC61850_DATA == True:
-
-        # Read the data
-        temp = sys.stdin.read(100)
-
-        splitPacket = temp.split()
-
-        t = splitPacket[0]
-
-        V1 = splitPacket[1]
-        V2 = splitPacket[2]
-        V3 = splitPacket[3]
-
-        I1 = splitPacket[4]
-        I2 = splitPacket[5]
-        I3 = splitPacket[6]
-
-        V = [V1, V2, V3]
-        I = [I1, I2, I3]
-
-        return t, V, I
-
-def initDataBuffers():
-
-    # Get the first set of data
-    tabc, Vabc, Iabc = getData()
-
-    # Fill array for first time
-    sample_cnt = 0
-    while(sample_cnt <= 198):
-        t, V, I = getData()
-        Iabc = np.vstack((Iabc, I))
-        Vabc = np.vstack((Vabc, V))
-        tabc = np.append(tabc, t)
-        sample_cnt = sample_cnt + 1
-
-    return tabc, Vabc, Iabc
-
-
-def updateData(tabc, Vabc, Iabc):
-
-    # Fill last place with new data
-    t, V, I = getData() # Data is comming in at 4kHz or faster from C program (checked)
-
-    if len(tabc) <= 900:
-        # Append data to full array if not full yet
-        Iabc = np.vstack((Iabc, I))
-        Vabc = np.vstack((Vabc, V))
-        tabc = np.append(tabc, t)
-    else:
-        Iabc = np.roll(Iabc, -1, axis=0)
-        Vabc = np.roll(Vabc, -1, axis=0)
-        tabc = np.roll(tabc, -1, axis=0)
-        Iabc[-1] = I
-        Vabc[-1] = V
-        tabc[-1] = t
-
-    return tabc, Vabc, Iabc
-
-def addData(tabc, Vabc, Iabc, amount):
-
-    for x in range(amount):
-
-        # Fill last place with new data
-        t, V, I = getData() # Data is comming in at 4kHz or faster from C program (checked)
-
-        Iabc = np.roll(Iabc, -1, axis=0)
-        Vabc = np.roll(Vabc, -1, axis=0)
-        tabc = np.roll(tabc, -1, axis=0)
-        Iabc[-1] = I
-        Vabc[-1] = V
-        tabc[-1] = t
-
-        x=x+1
-
-    return tabc, Vabc, Iabc
-
-def printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime):
-    print("Fault detected!")
-    print("estFaultType:", end = ' ')
-    print(estFaultType)
-    print("estFaultIncepTime:", end = ' ')
-    print(estFaultIncepTime)
-    print("estFaultStableTime:", end = ' ')
-    print(estFaultStableTime)
-
+try:
+    t = Thread(target=getRealTimeData, args=(faultDetectedEvent, dataQueue, ))
+    t.start()
+except:
+    print("Error: unable to start thread")
 
 # MAIN SCRIPT OF THE ALGORITHM
 if __name__=="__main__":
 
     checkSettings()
 
-    if USE_IEC61850_DATA == True or USE_SIMULATED_DATA == True:
+    # Initialize data buffer and fill with 200 samples
+    tabc, Vabc, Iabc = initDataBuffers(dataQueue)
 
-        # Initialize data buffer and fill with 200 samples
-        tabc, Vabc, Iabc = initDataBuffers()
+    # the Z from 200 samples earlier
+    previousZarray = np.zeros(Zarray_number_of_places)
 
-        # the Z from 200 samples earlier
-        previousZarray = np.zeros(200)
+    estFaultIncepTime_first = True
 
-        estFaultIncepTime_first = True
+    start = time.time()
+    counter = 0
 
-        start = time.time()
-        counter = 0
-
-        #########################################################
-        # PART I: Needs to run at 4 kHz continuously
-        #########################################################
-
-        # Fault detection loop
-        while(1):
-            counter = counter + 1
-    
-            # Do the calculations on the updated data with the latest 200st array for comparing Z
-            estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification(Iabc[-200:], Vabc[-200:], tabc[-1], previousZarray[-200])  
-            if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
-                # Only store estFaultIncepTime's first value
-                estFaultIncepTime = estFaultIncepTime_temp
-                estFaultIncepTime_first = False
-            if estFaultType != 0:
-                printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime)
-                break
-            
-            tabc, Vabc, Iabc = updateData(tabc, Vabc, Iabc)
-
-            # Add Z to previous array and roll
-            previousZarray = np.roll(previousZarray, -1)
-            previousZarray[-1] = Z
-
-        end = time.time()
-        print(f"Time: {(end -start)*1000} Counter: {counter}") # in milliseconds
-
-        # Get some more data
-        tabc, Vabc, Iabc = addData(tabc, Vabc, Iabc, 100)
-
-        #########################################################
-        # PART II: Calculate fault location: only needs to run once to fault has been identified by part I
-        #########################################################
-        # Second part
-        print("Filter fundamental")
-        start = time.time()
-        I_trans,V_trans,tn=DataProcess.RealTimeFilterFundamental(Iabc,Vabc,tabc,nargout=3)
-        # I_trans,V_trans,tn=DataProcess.FilterFundamental(f,Ts,Iabc_full,Vabc_full,tabc_full,nargout=3)
-        stop = time.time()
-
-        print(f"Time filter fundamental: {stop-start}")
-
-        # plt.plot(tabc, Vabc[:,0])
-        # plt.plot(tn, V_trans[0])
-        # plt.show()
-
-        start = np.argwhere(tn>=estFaultIncepTime)[0][0]
-        tn = tn[start:]
-        V_trans = V_trans[:,start:]
-        I_trans = I_trans[:,start:]
-
-        # plt.plot(tabc, Vabc[:,0])
-        # plt.plot(tn, V_trans[0])
-        # plt.show()
-
-        print("Start calculating fault location")
-        # Calculate fictitious fault inductance for every point on the line (k)
-
-        for n in np.arange(0,len(k)-1,1):
-            start1 = time.time()
-            vF,i2,X=CalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
-            stop1 = time.time()
-
-            start2 = time.time()
-            LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
-            stop2 = time.time()
-            LfFictArray[n]=LfFict            
+    #########################################################
+    # PART I: Needs to run at 4 kHz continuously
+    #########################################################
 
 
-        # Find zero crossing and hence the distance to the fault
-        print("Find zero cross")
-        zeroCross1=CalcFaultLocation.findZeroCross(LfFictArray,k)
-        print("FaultLocData:", end = ' ')
-        faultLocData = 0.8
-        print(faultLocData) # Dit zou 0.3 moeten zijn voor "data.mat" en 0.8 voor "data2.mat"
+    # Fault detection loop
+    while(1):
+        counter = counter + 1
+
+        # Do the calculations on the updated data with the latest 200st array for comparing Z
+        estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification(Iabc[-Zarray_number_of_places:], Vabc[-Zarray_number_of_places:], tabc[-1], previousZarray[-Zarray_number_of_places])  
+        if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
+            # Only store estFaultIncepTime's first value
+            estFaultIncepTime = estFaultIncepTime_temp
+            estFaultIncepTime_first = False
+        if estFaultType != 0:
+            printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime)
+            break
+        
+        tabc, Vabc, Iabc = updateData(tabc, Vabc, Iabc, dataQueue)
+
+        # Add Z to previous array and roll
+        previousZarray = np.roll(previousZarray, -1)
+        previousZarray[-1] = Z
+
+    end = time.time()
+    print(f"Time: {(end -start)*1000} Counter: {counter}") # in milliseconds
+
+    # Get some more data
+    tabc, Vabc, Iabc = addData(tabc, Vabc, Iabc, 100, dataQueue)
+
+    faultDetectedEvent.set()
+
+    #########################################################
+    # PART II: Calculate fault location: only needs to run once to fault has been identified by part I
+    #########################################################
+    # Second part
+    print("Filter fundamental")
+    start = time.time()
+    I_trans,V_trans,tn=DataProcess.RealTimeFilterFundamental(Iabc,Vabc,tabc,nargout=3)
+    # I_trans,V_trans,tn=DataProcess.FilterFundamental(f,Ts,Iabc_full,Vabc_full,tabc_full,nargout=3)
+    stop = time.time()
+
+    print(f"Time filter fundamental: {stop-start}")
+
+    # plt.plot(tabc, Vabc[:,0])
+    # plt.plot(tn, V_trans[0])
+    # plt.show()
+
+    start = np.argwhere(tn>=estFaultIncepTime)[0][0]
+    tn = tn[start:]
+    V_trans = V_trans[:,start:]
+    I_trans = I_trans[:,start:]
+
+    # plt.plot(tabc, Vabc[:,0])
+    # plt.plot(tn, V_trans[0])
+    # plt.show()
+
+    print("Start calculating fault location")
+    # Calculate fictitious fault inductance for every point on the line (k)
+
+    for n in np.arange(0,len(k)-1,1):
+        start1 = time.time()
+        vF,i2,X=CalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
+        stop1 = time.time()
+
+        start2 = time.time()
+        LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
+        stop2 = time.time()
+        LfFictArray[n]=LfFict            
+
+
+    # Find zero crossing and hence the distance to the fault
+    print("Find zero cross")
+    zeroCross1=CalcFaultLocation.findZeroCross(LfFictArray,k)
+    print("FaultLocData:", end = ' ')
+    faultLocData = 0.8
+    print(faultLocData) # Dit zou 0.3 moeten zijn voor "data.mat" en 0.8 voor "data2.mat"

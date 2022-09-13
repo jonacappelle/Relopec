@@ -4,6 +4,9 @@ import cmath
 
 # THIS IS THE CONFIGURATION FILE
 
+USE_IEC61850_DATA = True
+USE_SIMULATED_DATA = False
+
 
 def concat(a, b):
     return np.block(a, b)
@@ -66,3 +69,5 @@ number_of_k = 200
 k_start = 0.01
 k = np.arange(k_start,1-k_start+(1/number_of_k),(1/number_of_k))
 # k=np.arange(0.01,0.99+0.001,0.001)
+
+Zarray_number_of_places = 200

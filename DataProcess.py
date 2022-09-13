@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
     pass
 
+# Updated version of function for real time implementation
 def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,*args,**kwargs):
 
     Ts=0.0001
@@ -26,10 +27,9 @@ def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,*args,**kwargs):
     for n in np.arange(0,len(tn)-1):
 
         # Current
-        
         I_wd=Iabc[:,n:wd+n+1]
         y=fft(I_wd.transpose(), axis=0)
-        x = fftfreq(len(I_wd[0]), 1 / 10000)
+        x = np.fft.fftfreq(len(I_wd[0]), 1 / 10000)
         ytrans=np.zeros((len(I_wd[0]),3))
         ytrans = ytrans.astype('complex64')
 
@@ -39,7 +39,6 @@ def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,*args,**kwargs):
         I_trans[:,(n+round(wd/2))]=Itr_wd[round(wd/2)-1,:].transpose()
 
         # Voltage
-        
         V_wd=Vabc[:,n:wd+n+1]
         y=fft(V_wd.transpose(), axis=0)
         ytrans=np.zeros((len(V_wd[0]),3))
@@ -56,44 +55,6 @@ def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,*args,**kwargs):
 
     return I_trans,V_trans,tn
 
-# def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,*args,**kwargs):
-
-#     # windowsize for 50Hz signal in #samples
-#     # wd=(1/f)/Ts
-#     # wd=int(wd) # cast to integer
-
-#     I_trans=np.zeros((3,len(t)))
-#     V_trans=np.zeros((3,len(t)))
-
-#     # Current
-#     Iabc=Iabc.transpose()
-#     I_wd=Iabc
-#     y = np.fft.fft(I_wd.transpose(), axis=0)
-#     x = np.fft.fftfreq(len(I_wd[0]), 1 / 10000)
-#     ytrans = y.copy()
-#     ytrans[(np.abs(x)<=200)] = 0
-#     Itr_wd=ifft(ytrans, axis=0).real
-#     I_trans = Itr_wd.transpose()
-
-#     # Voltage
-#     Vabc=Vabc.transpose()
-#     V_wd=Vabc
-#     y=np.fft.fft(V_wd.transpose(), axis=0)
-#     x = fftfreq(len(V_wd[0]), 1 / 10000)
-#     ytrans = y.copy()
-#     ytrans[(np.abs(x)<=200)] = 0
-#     Vtr_wd=ifft(ytrans, axis=0).real
-#     V_trans = Vtr_wd.transpose()
-
-#     # I_trans=I_trans[:,200:]
-#     # V_trans=V_trans[:,200:]
-#     # t=t[200:]
-#     I_trans=I_trans[:,200:(len(I_trans[0])-100)]
-#     V_trans=V_trans[:,200:(len(V_trans[0])-100)]
-#     t=t[200:(len(t)-100)]
-
-
-#     return I_trans,V_trans,t
 
 def FilterFundamental(f=None,Ts=None,Iabc=None,Vabc=None,t=None,*args,**kwargs):
 
