@@ -58,12 +58,12 @@ def initDataBuffers(dataQueue):
 
     # Fill array for first time
     sample_cnt = 0
-    while(sample_cnt <= bufferArraysLength - 2): # with len of 200, only take 198
+    while(sample_cnt <= bufferCalculationLength - 2): # with len of 200, only take 198
         t, V, I = getData(dataQueue)
         Iabc = np.vstack((Iabc, I))
         Vabc = np.vstack((Vabc, V))
         tabc = np.append(tabc, t)
-        sample_cnt = sample_cnt + 1
+        sample_cnt += 1
 
     return tabc, Vabc, Iabc
 
@@ -72,7 +72,7 @@ def updateData(tabc, Vabc, Iabc, dataQueue):
     # Fill last place with new data
     t, V, I = getData(dataQueue) # Data is comming in at 4kHz or faster from C program (checked)
 
-    if len(tabc) <= 900:
+    if len(tabc) <= bufferLength:
         # Append data to full array if not full yet
         Iabc = np.vstack((Iabc, I))
         Vabc = np.vstack((Vabc, V))

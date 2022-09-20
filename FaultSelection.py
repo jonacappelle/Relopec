@@ -14,15 +14,11 @@ def calculate_fft(a):
 
 # Updated version of function for real time implementation
 # @jit
-def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,*args,**kwargs):
+def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,*args,**kwargs):
     
     f=50
-    sampleFreq=4000 #4khz
     Ts = 1/sampleFreq
-
-    Zbase = 45
-
-    wd=200#round((1 / f) / Ts)
+    wd=round((1 / f) / Ts)
     I=np.zeros(3)
     V=np.zeros(3)
 

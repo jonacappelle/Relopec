@@ -1,6 +1,6 @@
 import os
 import numpy as np
-
+from BasicParameters import *
 
 def printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime):
     print("Fault detected!")
@@ -33,4 +33,8 @@ def tests_matlab_python():
     #########################################
     os.system("pause")
 
+
+k_start = 0.01
+k = np.arange(k_start,1-k_start+(1/number_of_k),(1/number_of_k))
+# k=np.arange(0.01,0.99+0.001,0.001)
 

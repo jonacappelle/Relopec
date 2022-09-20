@@ -17,11 +17,9 @@ def concat(a):
 def exp(a):
     return cmath.exp(a)
 
-#GENERAL PARAMETERS
+# GENERAL PARAMETERS
 Ts=0.0001
 fs=1 / Ts
-
-# TsSim=tOrig(200) - tOrig(199)
 
 # GRID SPECIFIC PARAMETERS
 f=50
@@ -58,18 +56,20 @@ Z_line=R_line + 1j*wb*L_line
 remoteR=concat([1.1784337797630415,0.16984155512168936])
 remoteL=concat([0.8492077756084467,0.8492077756084467])
 
-# print(remoteR)
-
 Rg=remoteR[1]
 Lg=remoteL[1] / wb
 
-
+# How many steps of calculations need to be done
 number_of_k = 200
 
-k_start = 0.01
-k = np.arange(k_start,1-k_start+(1/number_of_k),(1/number_of_k))
-# k=np.arange(0.01,0.99+0.001,0.001)
-
-bufferArraysLength = 200
+# Length of the buffer on which the calculations are performed
+bufferCalculationLength = 200
+# Number of extra samples, to ensure all the necessary higher frequency components are captured
 numberOfExtraSamplesAfterFault = 100
+# Length of the global buffer, used for part II of the algorithm
+# This must be bigger than bufferCalculationLength
+bufferLength = 900
+
+# Sampling frequency of the incomming data
+sampleFreq = 10000 # in Hz
 

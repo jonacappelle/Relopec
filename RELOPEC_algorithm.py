@@ -22,14 +22,6 @@ from getData import *
 from Varia import *
 
 
-# Global variables
-I_trans = None
-V_trans = None
-# k = None
-tn = None
-estFaultType = None
-estFaultStableTime = None
-
 # Making arrays for k and fictitious fault impedance
 LfFictArray=np.zeros((len(k),1))
 RfFictArray=np.zeros((len(k),1))
@@ -39,6 +31,7 @@ dataQueue = queue.Queue()
 # Notify thread when to stop capturing data
 faultDetectedEvent = Event()
 
+# Start thread to get real time data
 try:
     t = Thread(target=getRealTimeData, args=(faultDetectedEvent, dataQueue, ))
     t.start()
@@ -54,7 +47,7 @@ if __name__=="__main__":
     tabc, Vabc, Iabc = initDataBuffers(dataQueue)
 
     # the Z from 200 samples earlier
-    previousZarray = np.zeros(bufferArraysLength)
+    previousZarray = np.zeros(bufferCalculationLength)
 
     estFaultIncepTime_first = True
 
@@ -65,13 +58,12 @@ if __name__=="__main__":
     # PART I: Needs to run at 4 kHz continuously
     #########################################################
 
-
     # Fault detection loop
     while(1):
-        counter = counter + 1
+        counter += 1
 
         # Do the calculations on the updated data with the latest 200st array for comparing Z
-        estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification(Iabc[-bufferArraysLength:], Vabc[-bufferArraysLength:], tabc[-1], previousZarray[-bufferArraysLength])  
+        estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification(Iabc[-bufferCalculationLength:], Vabc[-bufferCalculationLength:], tabc[-1], previousZarray[-bufferCalculationLength], Zbase, sampleFreq)  
         if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
             # Only store estFaultIncepTime's first value
             estFaultIncepTime = estFaultIncepTime_temp
@@ -92,6 +84,7 @@ if __name__=="__main__":
     # Get some more data after fault has occurred
     tabc, Vabc, Iabc = addData(tabc, Vabc, Iabc, numberOfExtraSamplesAfterFault, dataQueue)
 
+    # Let event handler know a fault has been detected and stop collecting data
     faultDetectedEvent.set()
 
     #########################################################
