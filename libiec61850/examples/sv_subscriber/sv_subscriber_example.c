@@ -48,15 +48,16 @@ svUpdateListener (SVSubscriber subscriber, void* parameter, SVSubscriber_ASDU as
     data.V2 = (float) SVSubscriber_ASDU_getINT32(asdu, 32)/1000.0;
     data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 40)/1000.0;
 
-    char str[120];
-    memset(str, 0, 120);
+    // char str[120];
+    // memset(str, 0, 120);
     // sprintf(str, "a%.2fab%.2fbc%.2fcd%.2fde%.2fef%.2ffg%.2fg\n", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
-    sprintf(str, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
+    // sprintf(str, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
 
     // sprintf(str, "test\n");
 
     // Write to Python
-    fwrite(str, 1, 100, stdout);
+    // fwrite(str, 1, 100, stdout);
+    fwrite(&data, 1, sizeof(data), stdout);
     // sprintf(str, "Write");
 
     // printf("Size: %d", SVSubscriber_ASDU_getDataSize(asdu));

@@ -60,6 +60,8 @@ if __name__=="__main__":
 
     # Fault detection loop
     while(1):
+        start = time.time()
+
         counter += 1
 
         # Do the calculations on the updated data with the latest 200st array for comparing Z
@@ -75,11 +77,10 @@ if __name__=="__main__":
         tabc, Vabc, Iabc = updateData(tabc, Vabc, Iabc, dataQueue)
 
         # Add Z to previous array and roll
-        previousZarray = np.roll(previousZarray, -1)
-        previousZarray[-1] = Z
+        previousZarray = rollFaster(previousZarray, Z)
 
-    end = time.time()
-    print(f"Time: {(end -start)*1000} Counter: {counter}") # in milliseconds
+        end = time.time()
+        # print(f"Time: {(end -start)*1000} Counter: {counter}") # in milliseconds
 
     # Get some more data after fault has occurred
     tabc, Vabc, Iabc = addData(tabc, Vabc, Iabc, numberOfExtraSamplesAfterFault, dataQueue)

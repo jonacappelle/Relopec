@@ -2,7 +2,7 @@ import numpy as np
 # from scipy.fft import fft, ifft, fftfreq
 import copy
 import matplotlib.pyplot as plt
-from numba import njit, jit, prange
+from numba import njit, jit, prange, objmode, typeof
 
 if __name__ == '__main__':
     pass
@@ -12,15 +12,25 @@ if __name__ == '__main__':
 def calculate_fft(a):
     return np.fft.fft(a, axis=0)
 
+@njit
+def make_2d(arraylist):
+    n = len(arraylist)
+    k = arraylist[0].shape[0]
+    a2d = np.zeros((n, k))
+    for i in range(n):
+        a2d[i] = arraylist[i]
+    return(a2d)
+
 # Updated version of function for real time implementation
-# @jit
+@njit(cache=True)
 def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,*args,**kwargs):
     
     f=50
     Ts = 1/sampleFreq
-    wd=round((1 / f) / Ts)
-    I=np.zeros(3)
-    V=np.zeros(3)
+    wd=(round((1 / f) / Ts))
+    # wd=200
+    # I=np.zeros(3)
+    # V=np.zeros(3)
 
     # IabcForm=Iabc.transpose()
     # VabcForm=Vabc.transpose()
@@ -28,10 +38,10 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zb
     # V=Vabc.transpose()
     indexFaultIncep=0
     indexFaultStable=0
-    estFaultStableTime=0
+    estFaultStableTime=np.float32(0)
     indexExecute=0
     estFaultType=0
-    estFaultIncepTime=0
+    estFaultIncepTime=np.float32(0)
 
     # The for loop simulates the real-time behaviour of the data
     # In practice: these values need to be executed only once at 2 kHz
@@ -41,21 +51,24 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zb
     wdV=Vabc
 
     # Maybe this can be optimized
-    # with objmode(Ifft='complex128[:]'):
-    Ifft=calculate_fft(wdI)
+    with objmode(Ifft='complex128[:,:]'):
+        Ifft=calculate_fft(wdI)
     # x = fftfreq(len(wdI[:,0]), 1 / 10000)
-    # with objmode(Vfft='complex128[:]'):
-    Vfft=calculate_fft(wdV)
+    with objmode(Vfft='complex128[:,:]'):
+        Vfft=calculate_fft(wdV)
 
-    I = I.astype('complex64')
-    V = V.astype('complex64')
+    # Ifft = np.random.random((200,3)) + np.random.random((200,3)) * 1j
+    # Vfft = np.random.random((200,3)) + np.random.random((200,3)) * 1j
 
-    I=(2.0*Ifft[1,:]/wd)
-    V=(2.0*Vfft[1,:]/wd)
+    # I = I.astype('complex64')
+    # V = V.astype('complex64')
 
-    Zab=abs((V[0] - V[1]) / (I[0] - I[1]))
-    Zbc=abs((V[1] - V[2]) / (I[1] - I[2]))
-    Zca=abs((V[2] - V[0]) / (I[2] - I[0]))
+    I=2.0*Ifft[1]/wd
+    V=2.0*Vfft[1]/wd
+
+    Zab=abs( (V[0] - V[1]) / (I[0] - I[1]) )
+    Zbc=abs( (V[1] - V[2]) / (I[1] - I[2]) )
+    Zca=abs( (V[2] - V[0]) / (I[2] - I[0]) )
     Za=abs(V[0] / I[0])
     Zb=abs(V[1] / I[1])
     Zc=abs(V[2] / I[2])
@@ -66,7 +79,6 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zb
     Z[3]=Za
     Z[4]=Zb
     Z[5]=Zc
-
 
     if min(Z) < (0.5*Zbase) and indexFaultIncep < 1:
         estFaultIncepTime=t

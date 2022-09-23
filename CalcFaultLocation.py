@@ -7,7 +7,6 @@ import itertools
 from numpy.linalg import multi_dot
 from numpy.linalg import inv
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import math
 import timeit
