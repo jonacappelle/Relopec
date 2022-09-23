@@ -48,7 +48,7 @@ svUpdateListener (SVSubscriber subscriber, void* parameter, SVSubscriber_ASDU as
     char str[100];
     memset(str, 0, 100);
     // sprintf(str, "a%.2fab%.2fbc%.2fcd%.2fde%.2fef%.2ffg%.2fg\n", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
-    sprintf(str, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
+    // sprintf(str, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
 
     // Write to Python
     fwrite(str, 1, 100, stdout);
@@ -104,7 +104,7 @@ main(int argc, char** argv)
     // }
     // else {
     //     printf("Using interface enp0s3\n");
-        SVReceiver_setInterfaceId(receiver, "enp0s3");
+        SVReceiver_setInterfaceId(receiver, "eth0");
     // }
 
     /* Create a subscriber listening to SV messages with APPID 4000h */

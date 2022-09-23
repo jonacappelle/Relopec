@@ -6,6 +6,8 @@ import numpy as np
 import itertools
 from numpy.linalg import multi_dot
 from numpy.linalg import inv
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import math
 import timeit
@@ -22,9 +24,9 @@ def calculate_optimized(iF, vF, Ts, tn):
     for n in np.arange(1,len(tn) - 1,1):
         A_matrix=np.array( ((iF[n] - iF[n - 1]), (((iF[n - 1] + iF[n]) * Ts) / 2), (iF[n + 1] - iF[n]), (((iF[n + 1] + iF[n]) * Ts) / 2))  )
         B_matrix=np.array(( ((vF[n - 1] + vF[n]) * (Ts/2)), ((vF[n] + vF[n + 1]) * (Ts/2)) ))
-        A_matrix = np.reshape(A_matrix, (2,2))
+        A_matrix1 = np.reshape(A_matrix, (2,2))
 
-        ZfFict[:,n]= (np.linalg.pinv(A_matrix) @ B_matrix) # Compute pseudo inverse of matrix if it can't be inversed
+        ZfFict[:,n]= (np.linalg.pinv(A_matrix1) @ B_matrix) # Compute pseudo inverse of matrix if it can't be inversed
 
         # A_matrix=[[iF[n] - iF[n - 1],np.dot((iF[n - 1] + iF[n]),Ts) / 2], [iF[n + 1] - iF[n],np.dot((iF[n + 1] + iF[n]),Ts) / 2]]
         # B_matrix=[[np.dot((vF[n - 1] + vF[n]),(Ts/2))], [np.dot((vF[n] + vF[n + 1]),(Ts/2))]]
@@ -137,13 +139,13 @@ def findZeroCross(LfFictArray=None,k=None,*args,**kwargs):
     # zeroCross3=np.mean([zeroCross1,zeroCross2])
 
     # Plotting
-    plt.scatter(k, LfFictArray, color="grey", alpha=0.5, label="Data")
-    plt.scatter(k_noOutliers, LfFictFit_noOutliers, color="green", alpha=0.5, label="No outliers + smoothed")
-    plt.plot(k, y_np, color="red", label="Fit np")
-    plt.legend()
-    plt.title("ZeroCross: " + str('{:.3f}'.format(zeroCross1)))
-    plt.ylim(-0.03, 0.03)
-    plt.savefig("result.png")
+    # plt.scatter(k, LfFictArray, color="grey", alpha=0.5, label="Data")
+    # plt.scatter(k_noOutliers, LfFictFit_noOutliers, color="green", alpha=0.5, label="No outliers + smoothed")
+    # # plt.plot(k, y_np, color="red", label="Fit np")
+    # plt.legend()
+    # plt.title("ZeroCross: " + str('{:.3f}'.format(zeroCross1)))
+    # plt.ylim(-0.03, 0.03)
+    # plt.savefig("result.png")
     # plt.show()
     
     return zeroCross1

@@ -126,7 +126,7 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
     global faultDetected
 
     while(not faultDetectedEvent.is_set()):
-        sleep(0.001)
+        # sleep(0.00025)
 
         MatlabSimDataSetIndex = MatlabSimDataSetIndex + 1
 
@@ -156,7 +156,7 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
     # I = np.array(I1, I2, I3)
 
         # Buffer the data to transfer to main algorithm
-        dataQueue.put(np.array((t_resampled[MatlabSimDataSetIndex,0], Vabc_resampled[MatlabSimDataSetIndex], Iabc_resampled[MatlabSimDataSetIndex])))
+        dataQueue.put( np.array( (t_resampled[MatlabSimDataSetIndex,0], Vabc_resampled[MatlabSimDataSetIndex], Iabc_resampled[MatlabSimDataSetIndex]), dtype=object ) )
         print(f"Update getRealTimeData Thread {t_resampled[MatlabSimDataSetIndex,0]}, {Vabc_resampled[MatlabSimDataSetIndex]}, {Iabc_resampled[MatlabSimDataSetIndex]}")
 
     # return t, V, I

@@ -1,7 +1,7 @@
 # THIS SCRIPT IS FOR GENERAL DATA PROCESSING
 
 import numpy as np    
-from scipy.fft import fft, ifft  , fftfreq  
+from scipy.fftpack import fft, ifft  , fftfreq  
 import cmath
 import matplotlib.pyplot as plt
 
