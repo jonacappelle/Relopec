@@ -9,6 +9,9 @@
 #include <signal.h>
 #include <stdio.h>
 #include "sv_subscriber.h"
+#include<stdlib.h>
+#include <time.h>
+#include <unistd.h>
 
 
 static bool running = true;
@@ -38,20 +41,23 @@ svUpdateListener (SVSubscriber subscriber, void* parameter, SVSubscriber_ASDU as
     data.t = (float) SVSubscriber_ASDU_getSmpCnt(asdu);
 
     data.I1 = (float) SVSubscriber_ASDU_getINT32(asdu, 0)/1000.0;
-    data.I2 = (float) SVSubscriber_ASDU_getINT32(asdu, 0)/1000.0;
-    data.I3 = (float) SVSubscriber_ASDU_getINT32(asdu, 0)/1000.0;
+    data.I2 = (float) SVSubscriber_ASDU_getINT32(asdu, 8)/1000.0;
+    data.I3 = (float) SVSubscriber_ASDU_getINT32(asdu, 16)/1000.0;
 
-    data.V1 = (float) SVSubscriber_ASDU_getINT32(asdu, 0)/1000.0;
-    data.V2 = (float) SVSubscriber_ASDU_getINT32(asdu, 0)/1000.0;
-    data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 0)/1000.0;
+    data.V1 = (float) SVSubscriber_ASDU_getINT32(asdu, 24)/1000.0;
+    data.V2 = (float) SVSubscriber_ASDU_getINT32(asdu, 32)/1000.0;
+    data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 40)/1000.0;
 
-    char str[100];
-    memset(str, 0, 100);
+    char str[120];
+    memset(str, 0, 120);
     // sprintf(str, "a%.2fab%.2fbc%.2fcd%.2fde%.2fef%.2ffg%.2fg\n", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
-    // sprintf(str, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
+    sprintf(str, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
+
+    // sprintf(str, "test\n");
 
     // Write to Python
     fwrite(str, 1, 100, stdout);
+    // sprintf(str, "Write");
 
     // printf("Size: %d", SVSubscriber_ASDU_getDataSize(asdu));
 
@@ -115,6 +121,8 @@ main(int argc, char** argv)
 
     /* Connect the subscriber to the receiver */
     SVReceiver_addSubscriber(receiver, subscriber);
+
+    sleep(3);
 
     /* Start listening to SV messages - starts a new receiver background thread */
     SVReceiver_start(receiver);
