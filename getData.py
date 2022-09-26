@@ -2,11 +2,10 @@ import pickle
 import scipy.io
 import sys
 import numpy as np
-from time import sleep
-from numba import njit, jit, prange, objmode, typeof
+from numba import njit, objmode
 import struct
 
-from BasicParameters import *
+from BasicParameters import USE_IEC61850_DATA, USE_SIMULATED_DATA
 
 
 if __name__ == '__main__':
@@ -61,7 +60,7 @@ def getData(dataQueue):
     return data[0], data[1], data[2]
 
 
-def initDataBuffers(dataQueue):
+def initDataBuffers(dataQueue, bufferCalculationLength):
 
     # Get the first set of data
     tabc, Vabc, Iabc = getData(dataQueue)
@@ -84,7 +83,7 @@ def rollFaster(x, newdata):
     x[-1] = newdata
     return x
 
-def updateData(tabc, Vabc, Iabc, dataQueue, everyXSamples):
+def updateData(tabc, Vabc, Iabc, dataQueue, everyXSamples, bufferLength):
 
     for x in range(everyXSamples):
         # Fill last place with new data

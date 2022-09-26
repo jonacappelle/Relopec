@@ -1,19 +1,18 @@
 # THIS SCRIPT IS FOR GENERAL DATA PROCESSING
 
 import numpy as np    
-from scipy.fftpack import fft, ifft  , fftfreq  
-import cmath
+from scipy.fftpack import fft, ifft, fftfreq  
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     pass
 
 # Updated version of function for real time implementation
-def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,sampleFreq=None,f=None,*args,**kwargs):
+def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,sampleFreq=None,gridFreq=None,*args,**kwargs):
 
     Ts=1/sampleFreq
     # windowsize for 50Hz signal in #samples
-    wd=(1/f)/Ts
+    wd=(1/gridFreq)/Ts
     wd=int(wd) # cast to integer
 
     I_trans=np.zeros((3,len(t)))

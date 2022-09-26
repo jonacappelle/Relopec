@@ -8,12 +8,13 @@ USE_IEC61850_DATA = False
 USE_SIMULATED_DATA = True
 
 # GENERAL PARAMETERS
-Ts=0.0001
-fs=1 / Ts
+# Sampling frequency of the incomming data
+sampleFreq = 10000 # in Hz
+Ts=1/sampleFreq
 
 # GRID SPECIFIC PARAMETERS
-f=50
-wb=2*math.pi*f
+gridFreq=50
+wb=2*math.pi*gridFreq
 Vn=15000
 Sn=5000000.0
 In=Sn / (math.sqrt(3)*Vn)
@@ -59,9 +60,6 @@ numberOfExtraSamplesAfterFault = 100
 # Length of the global buffer, used for part II of the algorithm
 # This must be bigger than bufferCalculationLength
 bufferLength = 900
-
-# Sampling frequency of the incomming data
-sampleFreq = 10000 # in Hz
 
 # Move window for real time fault identification over x samples instead of every sample
 everyXSamples = 5

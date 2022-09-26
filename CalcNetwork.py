@@ -2,14 +2,15 @@
 # COUPLING BETWEEN THE TRANSMISSION LINE (PREFERRED OPTION)
 
 import numpy as np
-from numpy.linalg import inv
 from numba import njit
 
 if __name__ == '__main__':
     pass
 
 @njit(cache=True)
-def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C_line=None,Ts=None,tn=None,Lg=None,Rg=None,*args,**kwargs):
+def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C_line=None,sampleFreq=None,tn=None,Lg=None,Rg=None,*args,**kwargs):
+
+    Ts=1/sampleFreq
 
     #SECTION LINE PARAMETERS 
     # before the fault

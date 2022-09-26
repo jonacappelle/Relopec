@@ -1,12 +1,10 @@
 import numpy as np
-# from scipy.fft import fft, ifft, fftfreq
 import copy
 import matplotlib.pyplot as plt
-from numba import njit, jit, prange, objmode, typeof
+from numba import njit, objmode
 
 if __name__ == '__main__':
     pass
-
 
 # @jit(nopython=False)
 def calculate_fft(a):
@@ -23,10 +21,10 @@ def make_2d(arraylist):
 
 # Updated version of function for real time implementation
 @njit(cache=True)
-def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,f=None,*args,**kwargs):
+def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,gridFreq=None,*args,**kwargs):
     
     Ts = 1/sampleFreq
-    wd=(round((1 / f) / Ts))
+    wd=(round((1 / gridFreq) / Ts))
     # wd=200
     # I=np.zeros(3)
     # V=np.zeros(3)
@@ -55,12 +53,6 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zb
     # x = fftfreq(len(wdI[:,0]), 1 / 10000)
     with objmode(Vfft='complex128[:,:]'):
         Vfft=calculate_fft(wdV)
-
-    # Ifft = np.random.random((200,3)) + np.random.random((200,3)) * 1j
-    # Vfft = np.random.random((200,3)) + np.random.random((200,3)) * 1j
-
-    # I = I.astype('complex64')
-    # V = V.astype('complex64')
 
     I=2.0*Ifft[1]/wd
     V=2.0*Vfft[1]/wd

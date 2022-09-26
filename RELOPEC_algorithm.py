@@ -1,13 +1,13 @@
-import DataProcess
-import FaultSelection
 import numpy as np
-import CalcNetwork
-import CalcFaultLocation
 import time
 from threading import Thread, Event
 import queue
 
 # Own libraries
+import DataProcess
+import FaultSelection
+import CalcNetwork
+import CalcFaultLocation
 from BasicParameters import *
 from ctypes import *
 from getData import *
@@ -34,8 +34,8 @@ if __name__=="__main__":
 
     checkSettings()
 
-    # Initialize data buffer and fill with 200 samples
-    tabc, Vabc, Iabc = initDataBuffers(dataQueue)
+    # Initialize data buffer and fill with bufferCalculationLength samples
+    tabc, Vabc, Iabc = initDataBuffers(dataQueue, bufferCalculationLength)
 
     # the Z from 200 samples earlier
     previousZarray = np.zeros(bufferCalculationLength)
@@ -55,7 +55,7 @@ if __name__=="__main__":
                                                                         Vabc[-bufferCalculationLength:], \
                                                                         tabc[-1], \
                                                                         previousZarray[-bufferCalculationLength], \
-                                                                        Zbase, sampleFreq, f)  
+                                                                        Zbase, sampleFreq, gridFreq)
         if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
             # Only store estFaultIncepTime's first value
             estFaultIncepTime = estFaultIncepTime_temp
@@ -64,7 +64,7 @@ if __name__=="__main__":
             printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime)
             break
         
-        tabc, Vabc, Iabc = updateData(tabc, Vabc, Iabc, dataQueue, everyXSamples)
+        tabc, Vabc, Iabc = updateData(tabc, Vabc, Iabc, dataQueue, everyXSamples, bufferLength)
 
         # Add Z to previous array and roll
         previousZarray = rollFaster(previousZarray, Z)
@@ -81,7 +81,7 @@ if __name__=="__main__":
     # Second part
     print("Filter fundamental")
     start = time.time()
-    I_trans,V_trans,tn=DataProcess.RealTimeFilterFundamental(Iabc,Vabc,tabc,sampleFreq,f)
+    I_trans,V_trans,tn=DataProcess.RealTimeFilterFundamental(Iabc,Vabc,tabc,sampleFreq,gridFreq)
     stop = time.time()
 
     print(f"Time filter fundamental: {stop-start}")
@@ -94,11 +94,11 @@ if __name__=="__main__":
     # Calculate fictitious fault inductance for every point on the line (k)
     for n in np.arange(0,len(k)-1,1):
         start1 = time.time()
-        vF,i2,X=CalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
+        vF,i2,X=CalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,sampleFreq,tn,Lg,Rg)
         stop1 = time.time()
 
         start2 = time.time()
-        LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,Ts,f,tn,estFaultType,estFaultStableTime)
+        LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,sampleFreq,gridFreq,tn,estFaultType,estFaultStableTime)
         stop2 = time.time()
 
         LfFictArray[n]=LfFict            

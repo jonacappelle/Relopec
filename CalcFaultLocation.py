@@ -1,17 +1,8 @@
 # FAULT CALCULATION
-
 import numpy as np
-import copy
 import numpy as np
-import itertools
-from numpy.linalg import multi_dot
-from numpy.linalg import inv
-import matplotlib
 import matplotlib.pyplot as plt
-import math
-import timeit
-import time
-from numba import njit, jit, prange
+from numba import njit
 
 if __name__ == '__main__':
     pass
@@ -34,8 +25,9 @@ def calculate_optimized(iF, vF, Ts, tn):
     return ZfFict
 
 # @njit(cache=True)
-def Fault(vF=None,i2=None,X=None,Ts=None,f=None,tn=None,FaultType=None,estFaultStableTime=None*args,**kwargs):
+def Fault(vF=None,i2=None,X=None,sampleFreq=None,gridFreq=None,tn=None,FaultType=None,estFaultStableTime=None,*args,**kwargs):
     
+    Ts=1/sampleFreq
     iF = None
     LfFict = None
     RfFict = None
@@ -77,7 +69,7 @@ def Fault(vF=None,i2=None,X=None,Ts=None,f=None,tn=None,FaultType=None,estFaultS
 
     # Find the overal inducance and resistance by taking the average over one period (0.02 seconds for 50 hertz) \
     # this step requires us to know the time of fault inception
-    index1=np.argwhere(tn >= (estFaultStableTime - (1/f)) )
+    index1=np.argwhere(tn >= (estFaultStableTime - (1/gridFreq)) )
     if(index1[0][0] == 0 ):
         print("Choose a bigger window")
     index2=np.argwhere(tn >= estFaultStableTime)
