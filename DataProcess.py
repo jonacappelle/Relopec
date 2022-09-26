@@ -9,10 +9,9 @@ if __name__ == '__main__':
     pass
 
 # Updated version of function for real time implementation
-def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,*args,**kwargs):
+def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,sampleFreq=None,f=None,*args,**kwargs):
 
-    Ts=0.0001
-    f=50
+    Ts=1/sampleFreq
     # windowsize for 50Hz signal in #samples
     wd=(1/f)/Ts
     wd=int(wd) # cast to integer
@@ -29,7 +28,7 @@ def RealTimeFilterFundamental(Iabc=None,Vabc=None,t=None,*args,**kwargs):
         # Current
         I_wd=Iabc[:,n:wd+n+1]
         y=fft(I_wd.transpose(), axis=0)
-        x = np.fft.fftfreq(len(I_wd[0]), 1 / 10000)
+        # x = np.fft.fftfreq(len(I_wd[0]), 1 / 10000)
         ytrans=np.zeros((len(I_wd[0]),3))
         ytrans = ytrans.astype('complex64')
 
@@ -96,3 +95,23 @@ def FilterFundamental(f=None,Ts=None,Iabc=None,Vabc=None,t=None,*args,**kwargs):
     tn=t[wd-1:]
 
     return I_trans,V_trans,tn
+
+
+def findStartCropInceptionTime(tn, V_trans, I_trans, estFaultIncepTime):
+
+    # Plot before (debugging)
+    # plt.plot(tabc, Vabc[:,0])
+    # plt.plot(tn, V_trans[0])
+    # plt.show()
+
+    start = np.argwhere(tn>=estFaultIncepTime)[0][0]
+    tn = tn[start:]
+    V_trans = V_trans[:,start:]
+    I_trans = I_trans[:,start:]
+
+    # Plot after (debugging)
+    # plt.plot(tabc, Vabc[:,0])
+    # plt.plot(tn, V_trans[0])
+    # plt.show()
+
+    return tn, V_trans, I_trans

@@ -23,9 +23,8 @@ def make_2d(arraylist):
 
 # Updated version of function for real time implementation
 @njit(cache=True)
-def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,*args,**kwargs):
+def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,f=None,*args,**kwargs):
     
-    f=50
     Ts = 1/sampleFreq
     wd=(round((1 / f) / Ts))
     # wd=200

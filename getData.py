@@ -77,15 +77,16 @@ def initDataBuffers(dataQueue):
 
     return tabc, Vabc, Iabc
 
+# @njit(cache=True)
 def rollFaster(x, newdata):
 
     x[0:-1] = x[1:]
     x[-1] = newdata
     return x
 
-def updateData(tabc, Vabc, Iabc, dataQueue):
+def updateData(tabc, Vabc, Iabc, dataQueue, everyXSamples):
 
-    for x in range(5):
+    for x in range(everyXSamples):
         # Fill last place with new data
         t, V, I = getData(dataQueue) # Data is comming in at 4kHz or faster from C program (checked)
 
@@ -115,12 +116,16 @@ def addData(tabc, Vabc, Iabc, amount, dataQueue):
         # Fill last place with new data
         t, V, I = getData(dataQueue) # Data is comming in at 4kHz or faster from C program (checked)
 
-        Iabc = np.roll(Iabc, -1, axis=0)
-        Vabc = np.roll(Vabc, -1, axis=0)
-        tabc = np.roll(tabc, -1, axis=0)
-        Iabc[-1] = I
-        Vabc[-1] = V
-        tabc[-1] = t
+        Iabc = rollFaster(Iabc, I)
+        Vabc = rollFaster(Vabc, V)
+        tabc = rollFaster(tabc, t)        
+
+        # Iabc = np.roll(Iabc, -1, axis=0)
+        # Vabc = np.roll(Vabc, -1, axis=0)
+        # tabc = np.roll(tabc, -1, axis=0)
+        # Iabc[-1] = I
+        # Vabc[-1] = V
+        # tabc[-1] = t
 
         x=x+1
 

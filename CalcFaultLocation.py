@@ -34,10 +34,9 @@ def calculate_optimized(iF, vF, Ts, tn):
     return ZfFict
 
 # @njit(cache=True)
-def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTime=None,*args,**kwargs):
+def Fault(vF=None,i2=None,X=None,Ts=None,f=None,tn=None,FaultType=None,estFaultStableTime=None*args,**kwargs):
     
     iF = None
-
     LfFict = None
     RfFict = None
 
@@ -74,13 +73,11 @@ def Fault(vF=None,i2=None,X=None,Ts=None,tn=None,FaultType=None,estFaultStableTi
                         vF=vFa.copy()
                         iF=(iaBf - iaAf)
 
-    # start = time.time()
     ZfFict = calculate_optimized(iF, vF, Ts, tn)
-    # stop = time.time()
-    # print(f"Time calculate_optimized: {stop-start}")
 
-    # Find the overal inducance and resistance by taking the average over one period (0.02 seconds for 50 hertz) this step requires us to know the time of fault inception
-    index1=np.argwhere(tn >= estFaultStableTime - 0.02)
+    # Find the overal inducance and resistance by taking the average over one period (0.02 seconds for 50 hertz) \
+    # this step requires us to know the time of fault inception
+    index1=np.argwhere(tn >= (estFaultStableTime - (1/f)) )
     if(index1[0][0] == 0 ):
         print("Choose a bigger window")
     index2=np.argwhere(tn >= estFaultStableTime)

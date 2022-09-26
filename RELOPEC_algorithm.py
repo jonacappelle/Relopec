@@ -1,26 +1,17 @@
-from tempfile import tempdir
-from precision import Precision
 import DataProcess
-import precision
-import pandas as pd
 import FaultSelection
 import numpy as np
 import CalcNetwork
 import CalcFaultLocation
-import matplotlib.pyplot as plt
-import timeit
 import time
-import _thread as thread
 from threading import Thread, Event
 import queue
-from time import sleep
 
 # Own libraries
 from BasicParameters import *
 from ctypes import *
 from getData import *
 from Varia import *
-
 
 # Making arrays for k and fictitious fault impedance
 LfFictArray=np.zeros((len(k),1))
@@ -51,21 +42,20 @@ if __name__=="__main__":
 
     estFaultIncepTime_first = True
 
-    start = time.time()
-    counter = 0
-
     #########################################################
     # PART I: Needs to run at 4 kHz continuously
     #########################################################
 
     # Fault detection loop
     while(1):
-        start = time.time()
-
-        counter += 1
 
         # Do the calculations on the updated data with the latest 200st array for comparing Z
-        estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification(Iabc[-bufferCalculationLength:], Vabc[-bufferCalculationLength:], tabc[-1], previousZarray[-bufferCalculationLength], Zbase, sampleFreq)  
+        estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification( \
+                                                                        Iabc[-bufferCalculationLength:], \
+                                                                        Vabc[-bufferCalculationLength:], \
+                                                                        tabc[-1], \
+                                                                        previousZarray[-bufferCalculationLength], \
+                                                                        Zbase, sampleFreq, f)  
         if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
             # Only store estFaultIncepTime's first value
             estFaultIncepTime = estFaultIncepTime_temp
@@ -74,13 +64,10 @@ if __name__=="__main__":
             printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime)
             break
         
-        tabc, Vabc, Iabc = updateData(tabc, Vabc, Iabc, dataQueue)
+        tabc, Vabc, Iabc = updateData(tabc, Vabc, Iabc, dataQueue, everyXSamples)
 
         # Add Z to previous array and roll
         previousZarray = rollFaster(previousZarray, Z)
-
-        end = time.time()
-        # print(f"Time: {(end -start)*1000} Counter: {counter}") # in milliseconds
 
     # Get some more data after fault has occurred
     tabc, Vabc, Iabc = addData(tabc, Vabc, Iabc, numberOfExtraSamplesAfterFault, dataQueue)
@@ -94,38 +81,27 @@ if __name__=="__main__":
     # Second part
     print("Filter fundamental")
     start = time.time()
-    I_trans,V_trans,tn=DataProcess.RealTimeFilterFundamental(Iabc,Vabc,tabc,nargout=3)
-    # I_trans,V_trans,tn=DataProcess.FilterFundamental(f,Ts,Iabc_full,Vabc_full,tabc_full,nargout=3)
+    I_trans,V_trans,tn=DataProcess.RealTimeFilterFundamental(Iabc,Vabc,tabc,sampleFreq,f)
     stop = time.time()
 
     print(f"Time filter fundamental: {stop-start}")
 
-    # plt.plot(tabc, Vabc[:,0])
-    # plt.plot(tn, V_trans[0])
-    # plt.show()
-
-    start = np.argwhere(tn>=estFaultIncepTime)[0][0]
-    tn = tn[start:]
-    V_trans = V_trans[:,start:]
-    I_trans = I_trans[:,start:]
-
-    # plt.plot(tabc, Vabc[:,0])
-    # plt.plot(tn, V_trans[0])
-    # plt.show()
+    # Crop data array based on the start time of fault localisation
+    tn, V_trans, I_trans = DataProcess.findStartCropInceptionTime(tn, V_trans, I_trans, estFaultIncepTime)
 
     print("Start calculating fault location")
-    # Calculate fictitious fault inductance for every point on the line (k)
 
+    # Calculate fictitious fault inductance for every point on the line (k)
     for n in np.arange(0,len(k)-1,1):
         start1 = time.time()
         vF,i2,X=CalcNetwork.NetworkParamNoCap(I_trans,V_trans,k[n],L_line,R_line,C_line,Ts,tn,Lg,Rg)
         stop1 = time.time()
 
         start2 = time.time()
-        LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,Ts,tn,estFaultType,estFaultStableTime)
+        LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,Ts,f,tn,estFaultType,estFaultStableTime)
         stop2 = time.time()
-        LfFictArray[n]=LfFict            
 
+        LfFictArray[n]=LfFict            
 
     # Find zero crossing and hence the distance to the fault
     print("Find zero cross")
