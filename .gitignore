@@ -1,5 +1,5 @@
 .venv/
 .libiec61850/build/
-.__pycache__/
+__pycache__/
 .idea/
 
