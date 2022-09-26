@@ -1,0 +1,25 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "austin",
+            "file": "RELOPEC_algorithm.py",
+            "label": "Profile RELOPEC_algorithm.py",
+        },
+		{
+			"type": "npm",
+			"script": "eslint",
+			"path": ".venv/Lib/site-packages/matplotlib/backends/web_backend",
+			"problemMatcher": [],
+			"label": "npm: eslint - .venv/Lib/site-packages/matplotlib/backends/web_backend",
+			"detail": "eslint . --fix",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}
+
+
+
