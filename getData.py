@@ -176,17 +176,18 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
         if USE_IEC61850_DATA == True:
 
             # Read the data
-            temp = sys.stdin.buffer.read(28)
+            temp = sys.stdin.buffer.read(32)
             # print(temp)
 
-            splitPacket = struct.unpack('fffffff', temp)
+            # uint64_t - float x6
+            splitPacket = struct.unpack('Qffffff', temp)
 
             # print(splitPacket)
 
             # splitPacket = temp.split()
 
             t = splitPacket[0]
-            # print(f"t: ---{t}---\n")
+            print(f"t: ---{t}---\n")
             # temp = float(t)
             # print(temp)
 
