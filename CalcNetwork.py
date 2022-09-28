@@ -38,7 +38,6 @@ def NetworkParamNoCap(I_trans=None,V_trans=None,k=None,L_line=None,R_line=None,C
     I=np.eye(3)
 
     for n in np.arange(1,len(tn)):
-        # X[:,n]= np.dot(  (np.linalg.inv((I-A*Ts/2))),(   np.dot(((I+A*Ts/2)),(X[:,n-1]))  +   ((B[:,n] + B[:,n-1])*Ts/2)  )   )
         X[:,n]=   np.linalg.inv((I-A*Ts/2))  @    (  (I+A*Ts/2) @ X[:,n-1]  +   ((B[:,n] + B[:,n-1]) * (Ts/2))  )   
     
     return vF,i2,X

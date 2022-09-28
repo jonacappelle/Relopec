@@ -11,14 +11,6 @@ from BasicParameters import USE_IEC61850_DATA, USE_SIMULATED_DATA, sampleFreq
 if __name__ == '__main__':
     pass
 
-
-def checkSettings():
-    if USE_IEC61850_DATA == True:
-        print("USE_IEC61850_DATA")
-    if USE_SIMULATED_DATA == True:
-        print("USE_SIMULATED_DATA")
-
-
 # Global variables
 faultDetected = False
 
@@ -26,39 +18,21 @@ faultDetected = False
 MatlabSimDataSet = scipy.io.loadmat('data2.mat')
 MatlabSimDataSetIndex = 0
 
+# Global variable for printing buffer occupancy
 cnt = 0
 
 def getData(dataQueue):
 
-    # if USE_SIMULATED_DATA == True:
-
-    #     global MatlabSimDataSetIndex
-    #     MatlabSimDataSetIndex = MatlabSimDataSetIndex + 1
-
-    #     t = MatlabSimDataSet['t']
-    #     Iabc = MatlabSimDataSet['Iabc'].transpose()
-    #     Vabc = MatlabSimDataSet['Vabc'].transpose()
-
-    #     t_resampled = t#[0:len(t):2]
-    #     Iabc_resampled = Iabc#[0:len(t):2]
-    #     Vabc_resampled = Vabc#[0:len(t):2]
-
-    #     return t_resampled[MatlabSimDataSetIndex,0], Vabc_resampled[MatlabSimDataSetIndex], Iabc_resampled[MatlabSimDataSetIndex]
-
-
-    # if USE_IEC61850_DATA == True:
-
+    # Get data from Queue
     data = dataQueue.get()
-    # print(f"Queue data get {data[0]}, {data[1]}, {data[2]}")
     
     global cnt
     cnt += 1
     if cnt >= 5000:
         cnt = 0
-        print(f"Size reduced: {dataQueue.qsize()}")
+        print(f"Buffer size: {dataQueue.qsize()}")
 
     return data[0], data[1], data[2]
-
 
 def initDataBuffers(dataQueue, bufferCalculationLength):
 
@@ -76,7 +50,6 @@ def initDataBuffers(dataQueue, bufferCalculationLength):
 
     return tabc, Vabc, Iabc
 
-# @njit(cache=True)
 def rollFaster(x, newdata):
 
     x[0:-1] = x[1:]
@@ -95,13 +68,6 @@ def updateData(tabc, Vabc, Iabc, dataQueue, everyXSamples, bufferLength):
             Vabc = np.vstack((Vabc, V))
             tabc = np.append(tabc, t)
         else:
-            # Iabc = np.roll(Iabc, -1, axis=0)
-            # Vabc = np.roll(Vabc, -1, axis=0)
-            # tabc = np.roll(tabc, -1, axis=0)
-            # Iabc[-1] = I
-            # Vabc[-1] = V
-            # tabc[-1] = t
-
             Iabc = rollFaster(Iabc, I)
             Vabc = rollFaster(Vabc, V)
             tabc = rollFaster(tabc, t)
@@ -117,16 +83,9 @@ def addData(tabc, Vabc, Iabc, amount, dataQueue):
 
         Iabc = rollFaster(Iabc, I)
         Vabc = rollFaster(Vabc, V)
-        tabc = rollFaster(tabc, t)        
+        tabc = rollFaster(tabc, t)
 
-        # Iabc = np.roll(Iabc, -1, axis=0)
-        # Vabc = np.roll(Vabc, -1, axis=0)
-        # tabc = np.roll(tabc, -1, axis=0)
-        # Iabc[-1] = I
-        # Vabc[-1] = V
-        # tabc[-1] = t
-
-        x=x+1
+        x += 1
 
     return tabc, Vabc, Iabc
 
@@ -147,19 +106,17 @@ def  read_data(name):
 
 def getRealTimeData(faultDetectedEvent, dataQueue):
 
-    print("Start getRealTimeData")
-
-    cnt = 0
+    print("Start RealTimeData Thread")
 
     global MatlabSimDataSetIndex
     global faultDetected
 
+    # Keep running until fault is detected
     while(not faultDetectedEvent.is_set()):
 
         if USE_SIMULATED_DATA == True:
-            # sleep(0.00025)
 
-            MatlabSimDataSetIndex = MatlabSimDataSetIndex + 2
+            MatlabSimDataSetIndex += 1
 
             t = MatlabSimDataSet['t']
             Iabc = MatlabSimDataSet['Iabc'].transpose()
@@ -168,31 +125,18 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
             if(MatlabSimDataSetIndex > len(t)-2 ):
                 break
 
-            t_resampled = t#[0:len(t):2]
-            Iabc_resampled = Iabc#[0:len(t):2]
-            Vabc_resampled = Vabc#[0:len(t):2]
-
             # Buffer the data to transfer to main algorithm
-            dataQueue.put( np.array( (t_resampled[MatlabSimDataSetIndex,0], Vabc_resampled[MatlabSimDataSetIndex], Iabc_resampled[MatlabSimDataSetIndex]), dtype=object ) )
-            # print(f"Update getRealTimeData Thread {t_resampled[MatlabSimDataSetIndex,0]}, {Vabc_resampled[MatlabSimDataSetIndex]}, {Iabc_resampled[MatlabSimDataSetIndex]}")
+            dataQueue.put( np.array( (t[MatlabSimDataSetIndex,0], Vabc[MatlabSimDataSetIndex], Iabc[MatlabSimDataSetIndex]), dtype=object ) )
 
         if USE_IEC61850_DATA == True:
 
             # Read the data
             temp = sys.stdin.buffer.read(32)
-            # print(temp)
 
             # uint64_t - float x6
             splitPacket = struct.unpack('Qffffff', temp)
 
-            # print(splitPacket)
-
-            # splitPacket = temp.split()
-
             t = splitPacket[0] / sampleFreq
-            # print(f"t: ---{t}---\n")
-            # temp = float(t)
-            # print(temp)
 
             V1 = splitPacket[1]
             V2 = splitPacket[2]
@@ -206,8 +150,3 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
             I = np.array( (I1, I2, I3) )
 
             dataQueue.put( np.array( (t, V, I), dtype=object ) )
-
-            # if( dataQueue.qsize() > 1000 ):
-
-            # print(f"Size: {dataQueue.qsize()}")
-            # print(f"Update getRealTimeData Thread {t}, {V}, {I}\n")
