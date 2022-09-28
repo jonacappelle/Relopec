@@ -9,7 +9,7 @@ USE_SIMULATED_DATA = True
 
 # GENERAL PARAMETERS
 # Sampling frequency of the incomming data
-sampleFreq = 10000 # in Hz
+sampleFreq = 4000 # in Hz
 Ts=1/sampleFreq
 
 # GRID SPECIFIC PARAMETERS
@@ -62,4 +62,4 @@ numberOfExtraSamplesAfterFault = 100
 bufferLength = 900
 
 # Move window for real time fault identification over x samples instead of every sample
-everyXSamples = 5
+everyXSamples = 4 # minimal value 4 -> 1000 Hz

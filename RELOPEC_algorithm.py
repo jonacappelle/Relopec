@@ -50,12 +50,20 @@ if __name__=="__main__":
     while(1):
 
         # Do the calculations on the updated data with the latest 200st array for comparing Z
-        estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification( \
+        try:
+            estFaultType,estFaultIncepTime_temp,estFaultStableTime, Z = FaultSelection.RealTimeFaultIndentification( \
                                                                         Iabc[-bufferCalculationLength:], \
                                                                         Vabc[-bufferCalculationLength:], \
                                                                         tabc[-1], \
-                                                                        previousZarray[-bufferCalculationLength], \
-                                                                        Zbase, sampleFreq, gridFreq)
+                                                                        previousZarray[int(-bufferCalculationLength/everyXSamples)], \
+                                                                        Zbase, sampleFreq, gridFreq) # compensate for Z array with everyXSamples
+        except:
+            estFaultType = 0
+            estFaultIncepTime_temp = 0
+            estFaultStableTime = 0
+            Z = 0
+            # print("Divide by zero")
+        
         if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
             # Only store estFaultIncepTime's first value
             estFaultIncepTime = estFaultIncepTime_temp
@@ -101,7 +109,7 @@ if __name__=="__main__":
         LfFict,RfFict,ZfFict=CalcFaultLocation.Fault(vF,i2,X,sampleFreq,gridFreq,tn,estFaultType,estFaultStableTime)
         stop2 = time.time()
 
-        LfFictArray[n]=LfFict            
+        LfFictArray[n]=LfFict        
 
     # Find zero crossing and hence the distance to the fault
     print("Find zero cross")

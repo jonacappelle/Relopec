@@ -20,7 +20,7 @@ def make_2d(arraylist):
     return(a2d)
 
 # Updated version of function for real time implementation
-@njit(cache=True)
+@njit
 def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,gridFreq=None,*args,**kwargs):
     
     Ts = 1/sampleFreq

@@ -5,7 +5,7 @@ import numpy as np
 from numba import njit, objmode
 import struct
 
-from BasicParameters import USE_IEC61850_DATA, USE_SIMULATED_DATA
+from BasicParameters import USE_IEC61850_DATA, USE_SIMULATED_DATA, sampleFreq
 
 
 if __name__ == '__main__':
@@ -159,11 +159,14 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
         if USE_SIMULATED_DATA == True:
             # sleep(0.00025)
 
-            MatlabSimDataSetIndex = MatlabSimDataSetIndex + 1
+            MatlabSimDataSetIndex = MatlabSimDataSetIndex + 2
 
             t = MatlabSimDataSet['t']
             Iabc = MatlabSimDataSet['Iabc'].transpose()
             Vabc = MatlabSimDataSet['Vabc'].transpose()
+
+            if(MatlabSimDataSetIndex > len(t)-2 ):
+                break
 
             t_resampled = t#[0:len(t):2]
             Iabc_resampled = Iabc#[0:len(t):2]
@@ -186,8 +189,8 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
 
             # splitPacket = temp.split()
 
-            t = splitPacket[0]
-            print(f"t: ---{t}---\n")
+            t = splitPacket[0] / sampleFreq
+            # print(f"t: ---{t}---\n")
             # temp = float(t)
             # print(temp)
 
