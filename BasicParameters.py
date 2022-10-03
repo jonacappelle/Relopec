@@ -49,12 +49,12 @@ Lg=remoteL[1] / wb # in Henry
 number_of_k = 200
 
 # Length of the buffer on which the calculations are performed
-bufferCalculationLength = 200 # in numer of samples
+bufferCalculationLength = 200 # in number of samples
 # Number of extra samples, to ensure all the necessary higher frequency components are captured
 numberOfExtraSamplesAfterFault = 100 # in numer of samples
 # Length of the global buffer, used for part II of the algorithm
 # This must be bigger than bufferCalculationLength
-bufferLength = 900 # in numer of samples
+bufferLength = 900 # in number of samples
 
 # Move window for real time fault identification over x samples instead of every sample
 everyXSamples = 4 # minimal value 4 -> 1000 Hz
