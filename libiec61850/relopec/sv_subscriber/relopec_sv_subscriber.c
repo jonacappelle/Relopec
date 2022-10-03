@@ -5,6 +5,10 @@
  *
  */
 
+// MAC adres PI
+
+// E4:5F:01:41:87:D5
+
 #include "hal_thread.h"
 #include <signal.h>
 #include <stdio.h>
