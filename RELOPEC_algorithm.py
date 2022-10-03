@@ -69,6 +69,7 @@ if __name__=="__main__":
             estFaultIncepTime = estFaultIncepTime_temp
             estFaultIncepTime_first = False
         if estFaultType != 0:
+            triggerGPIO()
             printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime)
             break
         
@@ -115,3 +116,5 @@ if __name__=="__main__":
     print("Find zero cross")
     zeroCross1=CalcFaultLocation.findZeroCross(LfFictArray,k)
     # Dit zou 0.3 moeten zijn voor "data.mat" en 0.8 voor "data2.mat"
+
+    GPIOCleanup()
