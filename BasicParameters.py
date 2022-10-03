@@ -2,12 +2,12 @@ import numpy as np
 import math
 
 # THIS IS THE CONFIGURATION FILE
-USE_IEC61850_DATA = False
-USE_SIMULATED_DATA = True
+USE_IEC61850_DATA = True
+USE_SIMULATED_DATA = False
 
 # GENERAL PARAMETERS
 # Sampling frequency of the incoming data
-sampleFreq = 10000 # in Hz
+sampleFreq = 4000 # in Hz
 Ts=1/sampleFreq # in seconds
 
 # GRID SPECIFIC PARAMETERS
