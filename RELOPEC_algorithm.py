@@ -114,6 +114,4 @@ if __name__=="__main__":
     # Find zero crossing and hence the distance to the fault
     print("Find zero cross")
     zeroCross1=CalcFaultLocation.findZeroCross(LfFictArray,k)
-    print("FaultLocData:", end = ' ')
-    faultLocData = 0.8
-    print(faultLocData) # Dit zou 0.3 moeten zijn voor "data.mat" en 0.8 voor "data2.mat"
+    # Dit zou 0.3 moeten zijn voor "data.mat" en 0.8 voor "data2.mat"
