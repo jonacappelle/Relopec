@@ -19,12 +19,13 @@ RfFictArray=np.zeros((len(k),1))
 
 # Create a queue for buffering incomming data
 dataQueue = queue.Queue()
+idQueue = queue.Queue()
 # Notify thread when to stop capturing data
 faultDetectedEvent = Event()
 
 # Start thread to get real time data
 try:
-    t = Thread(target=getRealTimeData, args=(faultDetectedEvent, dataQueue, ))
+    t = Thread(target=getRealTimeData, args=(faultDetectedEvent, dataQueue, idQueue, ))
     t.start()
 except:
     print("Error: unable to start thread")
@@ -34,6 +35,7 @@ if __name__=="__main__":
 
     checkSettings()
 
+    print("Init data buffers")
     # Initialize data buffer and fill with bufferCalculationLength samples
     tabc, Vabc, Iabc = initDataBuffers(dataQueue, bufferCalculationLength)
 
@@ -46,6 +48,7 @@ if __name__=="__main__":
     # PART I: Needs to run at 4 kHz continuously
     #########################################################
 
+    print("Start fault detection")
     # Fault detection loop
     while(1):
 
@@ -69,7 +72,7 @@ if __name__=="__main__":
             estFaultIncepTime = estFaultIncepTime_temp
             estFaultIncepTime_first = False
         if estFaultType != 0:
-            triggerGPIO()
+            # triggerGPIO()
             printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime)
             break
         
@@ -81,6 +84,7 @@ if __name__=="__main__":
     # Get some more data after fault has occurred
     tabc, Vabc, Iabc = addData(tabc, Vabc, Iabc, numberOfExtraSamplesAfterFault, dataQueue)
 
+    print("Stop gathering data")
     # Let event handler know a fault has been detected and stop collecting data
     faultDetectedEvent.set()
 
@@ -112,9 +116,29 @@ if __name__=="__main__":
 
         LfFictArray[n]=LfFict        
 
+    stop = time.time()
+
     # Find zero crossing and hence the distance to the fault
     print("Find zero cross")
     zeroCross1=CalcFaultLocation.findZeroCross(LfFictArray,k)
     # Dit zou 0.3 moeten zijn voor "data.mat" en 0.8 voor "data2.mat"
 
-    GPIOCleanup()
+    print(f"Total time: {stop-start}")
+
+    # Save data to file
+    f = open("test.txt", "a")
+    f.write(str(idQueue.get()))
+    f.write(",")
+    f.write(str(zeroCross1))
+    f.write(",")
+    f.write(str(stop-start))
+    f.write(",")
+    f.write(str(estFaultType))
+    f.write(",")
+    f.write(str(estFaultIncepTime))
+    f.write(",")
+    f.write(str(estFaultStableTime))
+    f.write("\n")
+    f.close()
+
+    # GPIOCleanup()

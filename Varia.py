@@ -1,5 +1,5 @@
 import numpy as np
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 from BasicParameters import *
 
 def printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime):
@@ -26,12 +26,12 @@ if everyXSamples > 4:
     raise Exception("everyXSamples must be greater or equal to 4 to ensure 1000 Hz update rate")
 
 
-def triggerGPIO():
-    pin = 12
+# def triggerGPIO():
+#     pin = 12
 
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(pin, GPIO.OUT)
-    GPIO.output(pin, GPIO.HIGH)
+#     GPIO.setmode(GPIO.BOARD)
+#     GPIO.setup(pin, GPIO.OUT)
+#     GPIO.output(pin, GPIO.HIGH)
 
-def GPIOCleanup():
-    GPIO.cleanup()
+# def GPIOCleanup():
+#     GPIO.cleanup()

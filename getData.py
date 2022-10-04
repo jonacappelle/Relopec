@@ -7,7 +7,6 @@ import struct
 
 from BasicParameters import USE_IEC61850_DATA, USE_SIMULATED_DATA, sampleFreq
 
-
 if __name__ == '__main__':
     pass
 
@@ -103,13 +102,15 @@ def  read_data(name):
 
     return data
 
+first = True
 
-def getRealTimeData(faultDetectedEvent, dataQueue):
+def getRealTimeData(faultDetectedEvent, dataQueue, idQueue):
 
     print("Start RealTimeData Thread")
 
     global MatlabSimDataSetIndex
     global faultDetected
+    global first
 
     # Keep running until fault is detected
     while(not faultDetectedEvent.is_set()):
@@ -131,10 +132,10 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
         if USE_IEC61850_DATA == True:
 
             # Read the data
-            temp = sys.stdin.buffer.read(32)
+            temp = sys.stdin.buffer.read(40)
 
             # uint64_t - float x6
-            splitPacket = struct.unpack('Qffffff', temp)
+            splitPacket = struct.unpack('Qffffffii', temp)
 
             t = splitPacket[0] / sampleFreq
 
@@ -145,6 +146,12 @@ def getRealTimeData(faultDetectedEvent, dataQueue):
             I1 = splitPacket[4]
             I2 = splitPacket[5]
             I3 = splitPacket[6]
+
+            ID = splitPacket[7]
+            if first:
+                print(f"ID: {ID}")
+                idQueue.put(ID)
+                first = False
 
             V = np.array( (V1, V2, V3) )
             I = np.array( (I1, I2, I3) )
