@@ -26,6 +26,26 @@ if everyXSamples > 4:
     raise Exception("everyXSamples must be greater or equal to 4 to ensure 1000 Hz update rate")
 
 
+def saveDataToFile(idQueue, zeroCross1, time, estFaultType, estFaultIncepTime, estFaultStableTime):
+    datasetNr = idQueue.get()
+    filename = "RELOPEC_" + str(datasetNr) + ".txt"
+    f = open(filename, "a")
+    f.write(str(datasetNr))
+    f.write(",")
+    f.write(str(zeroCross1))
+    f.write(",")
+    f.write(str(time))
+    f.write(",")
+    f.write(str(estFaultType))
+    f.write(",")
+    f.write(str(estFaultIncepTime))
+    f.write(",")
+    f.write(str(estFaultStableTime))
+    f.write("\n")
+    f.close()
+
+
+
 # def triggerGPIO():
 #     pin = 12
 

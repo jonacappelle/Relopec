@@ -4,7 +4,8 @@ import sys
 import numpy as np
 from numba import njit, objmode
 import struct
-
+from multiprocessing.connection import wait
+import random
 from BasicParameters import USE_IEC61850_DATA, USE_SIMULATED_DATA, sampleFreq
 
 if __name__ == '__main__':
@@ -104,13 +105,15 @@ def  read_data(name):
 
 first = True
 
-def getRealTimeData(faultDetectedEvent, dataQueue, idQueue):
+def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
 
     print("Start RealTimeData Thread")
 
     global MatlabSimDataSetIndex
     global faultDetected
     global first
+
+    # startEvent.wait(timeout=100)
 
     # Keep running until fault is detected
     while(not faultDetectedEvent.is_set()):
@@ -149,6 +152,8 @@ def getRealTimeData(faultDetectedEvent, dataQueue, idQueue):
 
             ID = splitPacket[7]
             if first:
+                if ID == 0:
+                    ID = random.randint(1, 1000)
                 print(f"ID: {ID}")
                 idQueue.put(ID)
                 first = False

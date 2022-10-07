@@ -2,17 +2,25 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 from numba import njit, objmode
+from numba.pycc import CC
+
 
 if __name__ == '__main__':
     pass
 
+# cc = CC('my_module')
+# cc.verbose = True
+# cc.compile()
+
 def calculate_fft(a):
     return np.fft.fft(a, axis=0)
 
+# This function is precompiled
 # Updated version of function for real time implementation
 @njit
-def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,gridFreq=None,*args,**kwargs):
-    
+# @cc.export('RealTimeFaultIndentification', 'Tuple((u4,f4,f4,f8))(f4[:,:],f4[:,:],f4,f8,f4,i4,i4)')
+def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,gridFreq=None):
+
     Ts = 1/sampleFreq
     wd=(round((1 / gridFreq) / Ts))
 

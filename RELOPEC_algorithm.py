@@ -20,12 +20,13 @@ RfFictArray=np.zeros((len(k),1))
 # Create a queue for buffering incomming data
 dataQueue = queue.Queue()
 idQueue = queue.Queue()
-# Notify thread when to stop capturing data
+# Notify thread when to start - stop capturing data
+startEvent = Event()
 faultDetectedEvent = Event()
 
 # Start thread to get real time data
 try:
-    t = Thread(target=getRealTimeData, args=(faultDetectedEvent, dataQueue, idQueue, ))
+    t = Thread(target=getRealTimeData, args=(startEvent, faultDetectedEvent, dataQueue, idQueue, ))
     t.start()
 except:
     print("Error: unable to start thread")
@@ -125,20 +126,8 @@ if __name__=="__main__":
 
     print(f"Total time: {stop-start}")
 
+
     # Save data to file
-    f = open("test.txt", "a")
-    f.write(str(idQueue.get()))
-    f.write(",")
-    f.write(str(zeroCross1))
-    f.write(",")
-    f.write(str(stop-start))
-    f.write(",")
-    f.write(str(estFaultType))
-    f.write(",")
-    f.write(str(estFaultIncepTime))
-    f.write(",")
-    f.write(str(estFaultStableTime))
-    f.write("\n")
-    f.close()
+    saveDataToFile(idQueue, zeroCross1, stop-start, estFaultType, estFaultIncepTime, estFaultStableTime)
 
     # GPIOCleanup()
