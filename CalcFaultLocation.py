@@ -109,9 +109,17 @@ def findZeroCross(LfFictArray=None,k=None,*args,**kwargs):
     r=np.roots(LfFictFit2)
     for n in np.arange(0,len(r),1):
         if r[n] < 1 and r[n] > 0:
-            zeroCross=r[n]
+            zeroCross=abs(r[n])
     
-    print("zerocross:", end = ' ')
+    # Always remove imaginary part
+    try:
+        zeroCross = zeroCross.real
+    except:
+        zeroCross = zeroCross
+
+    # Find minimum of polyfit
+
+    print("fault location:", end = ' ')
     print(zeroCross)
 
     # Plotting
