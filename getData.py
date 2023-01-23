@@ -103,6 +103,15 @@ def  read_data(name):
 
     return data
 
+def store_counter(cntr):
+    with open("relopec_program_data.bin", "wb") as f:
+        pickle.dump(cntr, f)
+
+def get_counter():
+    with open("relopec_program_data.bin", "rb") as f:
+        cntr =  pickle.load(f)
+    return cntr
+
 first = True
 
 def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
@@ -151,10 +160,20 @@ def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
             I3 = splitPacket[6]
 
             ID = splitPacket[7]
-            if first:
+            
+            # Only go in here if it is the first time some voltage is on the line
+            if first and ( (V1 != 0.0) or (V2 != 0.0) or (V3 != 0.0) or(I1 != 0.0) or (I2 != 0.0) or (I3 != 0.0) ):
                 if ID == 0:
-                    ID = random.randint(1, 1000)
-                print(f"ID: {ID}")
+                    try:
+                        ID = get_counter()
+                        ID += 1
+                        store_counter(ID)
+                        print(f"ID Generated: {ID}")
+                    except:
+                        store_counter(0)
+                        print(f"Error Generating ID: Resetting ID")
+                else:
+                    print(f"Received ID: {ID}")
                 idQueue.put(ID)
                 first = False
 
