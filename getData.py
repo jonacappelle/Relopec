@@ -147,7 +147,7 @@ def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
             temp = sys.stdin.buffer.read(40)
 
             # uint64_t - float x6
-            splitPacket = struct.unpack('Qffffffii', temp)
+            splitPacket = struct.unpack('Qfffffffi', temp)
 
             t = splitPacket[0] / sampleFreq
 

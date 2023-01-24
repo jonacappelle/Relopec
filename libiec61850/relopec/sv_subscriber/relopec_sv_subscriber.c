@@ -83,7 +83,7 @@ svUpdateListener (SVSubscriber subscriber, void* parameter, SVSubscriber_ASDU as
         data.V2 = (float) SVSubscriber_ASDU_getINT32(asdu, 40)/1000.0;
         data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 48)/1000.0;
 
-        data.id = (uint32_t) SVSubscriber_ASDU_getINT32(asdu, 24);
+        data.id = (float) SVSubscriber_ASDU_getINT32(asdu, 24)/1000.0/10.0;
 
         // char str[120];
         // memset(str, 0, 120);
