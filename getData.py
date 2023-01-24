@@ -7,6 +7,7 @@ import struct
 from multiprocessing.connection import wait
 import random
 from BasicParameters import USE_IEC61850_DATA, USE_SIMULATED_DATA, sampleFreq
+import math
 
 if __name__ == '__main__':
     pass
@@ -121,6 +122,7 @@ def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
     global MatlabSimDataSetIndex
     global faultDetected
     global first
+    counter = 0
 
     # startEvent.wait(timeout=100)
 
@@ -159,10 +161,12 @@ def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
             I2 = splitPacket[5]
             I3 = splitPacket[6]
 
-            ID = splitPacket[7]
-            
+            ID = math.ceil(splitPacket[7])
+            # print(f"ID: {ID}")
+
             # Only go in here if it is the first time some voltage is on the line
             if first and ( (V1 != 0.0) or (V2 != 0.0) or (V3 != 0.0) or(I1 != 0.0) or (I2 != 0.0) or (I3 != 0.0) ):
+                counter += 1
                 if ID == 0:
                     try:
                         ID = get_counter()
@@ -172,10 +176,11 @@ def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
                     except:
                         store_counter(0)
                         print(f"Error Generating ID: Resetting ID")
-                else:
-                    print(f"Received ID: {ID}")
-                idQueue.put(ID)
-                first = False
+                # else:
+                #     print(f"Received ID: {ID}")
+                if counter > 100:
+                    idQueue.put(ID)
+                    first = False
 
             V = np.array( (V1, V2, V3) )
             I = np.array( (I1, I2, I3) )

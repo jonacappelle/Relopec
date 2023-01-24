@@ -17,6 +17,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <math.h>
 
 static bool running = true;
 
@@ -36,7 +37,7 @@ typedef struct data{
     float I2;
     float I3;
 
-    uint32_t id;
+    float id;
 } data_t;
 
 int32_t ID = 0;
@@ -53,6 +54,7 @@ svUpdateListener (SVSubscriber subscriber, void* parameter, SVSubscriber_ASDU as
     // printf("svUpdateListener test\n");
 
     data_t data;
+    float id;
 
     // if(firstRun)
     // {
@@ -79,15 +81,19 @@ svUpdateListener (SVSubscriber subscriber, void* parameter, SVSubscriber_ASDU as
         data.I2 = (float) SVSubscriber_ASDU_getINT32(asdu, 8)/1000.0/10.0;
         data.I3 = (float) SVSubscriber_ASDU_getINT32(asdu, 16)/1000.0/10.0;
 
-        data.V1 = (float) SVSubscriber_ASDU_getINT32(asdu, 32)/1000.0;
-        data.V2 = (float) SVSubscriber_ASDU_getINT32(asdu, 40)/1000.0;
-        data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 48)/1000.0;
-
         data.id = (float) SVSubscriber_ASDU_getINT32(asdu, 24)/1000.0/10.0;
 
-        // char str[120];
+        data.V1 = (float) SVSubscriber_ASDU_getINT32(asdu, 32)/1000.0;
+        data.V2 = (float) SVSubscriber_ASDU_getINT32(asdu, 40)/1000.0;
+        data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 48)/1000.0;   
+
+        // data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 48)/1000.0;      
+
+
+        char str[120];
+        // sprintf(str, "%.3f %d\n", data.id, data.id*1000);
         // memset(str, 0, 120);
-        // sprintf(str, "a%.2fab%.2fbc%.2fcd%.2fde%.2fef%.2ffg%.2fg\n", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
+        // sprintf(str, "x%.2fxa%.2fab%.2fbc%.2fcd%.2fde%.2fef%.2ffg%.2fg\n", data.id, data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
         // sprintf(str, "%" PRIu64 " %.2f %.2f %.2f %.2f %.2f %.2f %d sizeofdata %d\n--------------------------------------------", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3, data.id, sizeof(data));
         // sprintf(str, "%" PRIu64 " sizeofdata %d %d %d \n--------------------------------------------", data.t, (int) sizeof(data), (int) sizeof(data.id), (int) sizeof(data.t));
 
@@ -95,7 +101,7 @@ svUpdateListener (SVSubscriber subscriber, void* parameter, SVSubscriber_ASDU as
 
         // Write to Python
         fwrite(&data, 1, sizeof(data), stdout);
-        // fwrite(&str, 1, 80, stdout);
+        // fwrite(&str, 1, 120, stdout);
 
         // Format description: https://www.typhoon-hil.com/documentation/typhoon-hil-software-manual/References/iec_61850_sampled_values_protocol.html
     // }
