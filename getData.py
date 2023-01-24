@@ -176,11 +176,10 @@ def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
                     except:
                         store_counter(0)
                         print(f"Error Generating ID: Resetting ID")
-                # else:
-                #     print(f"Received ID: {ID}")
-                if counter > 100:
+                if counter > 10:
                     idQueue.put(ID)
                     first = False
+                    print(f"Received ID: {ID}")
 
             V = np.array( (V1, V2, V3) )
             I = np.array( (I1, I2, I3) )
