@@ -17,10 +17,12 @@ k = np.arange(k_start,1-k_start+(1/number_of_k),(1/number_of_k))
 
 
 def checkSettings():
-    if USE_IEC61850_DATA == True:
+    if USE_IEC61850_DATA:
         print("USE_IEC61850_DATA")
-    if USE_SIMULATED_DATA == True:
+    if USE_SIMULATED_DATA:
         print("USE_SIMULATED_DATA")
+    if USE_FIXED_STABLE_TIME:
+        print("USE_FIXED_STABLE_TIME")
 
 if everyXSamples > 4:
     raise Exception("everyXSamples must be greater or equal to 4 to ensure 1000 Hz update rate")

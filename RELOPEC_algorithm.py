@@ -44,6 +44,8 @@ if __name__=="__main__":
     previousZarray = np.zeros(bufferCalculationLength)
 
     estFaultIncepTime_first = True
+    checkStableTime = False
+    estFaultIncepTime = 0
 
     #########################################################
     # PART I: Needs to run at 4 kHz continuously
@@ -60,7 +62,7 @@ if __name__=="__main__":
                                                                         Vabc[-bufferCalculationLength:], \
                                                                         tabc[-1], \
                                                                         previousZarray[int(-bufferCalculationLength/everyXSamples)], \
-                                                                        Zbase, sampleFreq, gridFreq) # compensate for Z array with everyXSamples
+                                                                        Zbase, sampleFreq, gridFreq, checkStableTime) # compensate for Z array with everyXSamples
         except:
             estFaultType = 0
             estFaultIncepTime_temp = 0
@@ -72,11 +74,15 @@ if __name__=="__main__":
             # Only store estFaultIncepTime's first value
             estFaultIncepTime = estFaultIncepTime_temp
             estFaultIncepTime_first = False
+            
         if estFaultType != 0:
             # triggerGPIO()
             printFaultTimes(estFaultType, estFaultIncepTime, estFaultStableTime)
             break
         
+        if USE_FIXED_STABLE_TIME and (not estFaultIncepTime_first) and (tabc[-1] >= (estFaultIncepTime + fixed_stable_time)):
+            checkStableTime = True
+                
         tabc, Vabc, Iabc = updateData(tabc, Vabc, Iabc, dataQueue, everyXSamples, bufferLength)
 
         # Add Z to previous array and roll
@@ -97,7 +103,6 @@ if __name__=="__main__":
     start = time.time()
     I_trans,V_trans,tn=DataProcess.RealTimeFilterFundamental(Iabc,Vabc,tabc,sampleFreq,gridFreq)
     stop = time.time()
-
     print(f"Time filter fundamental: {stop-start}")
 
     # Crop data array based on the start time of fault localisation

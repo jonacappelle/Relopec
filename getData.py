@@ -16,7 +16,7 @@ if __name__ == '__main__':
 faultDetected = False
 
 # Dataset
-MatlabSimDataSet = scipy.io.loadmat('simulationData/data2.mat')
+MatlabSimDataSet = scipy.io.loadmat('simulationData/data.mat')
 MatlabSimDataSetIndex = 0
 
 # Global variable for printing buffer occupancy

@@ -3,6 +3,7 @@ import copy
 import matplotlib.pyplot as plt
 from numba import njit, objmode
 from numba.pycc import CC
+from BasicParameters import USE_FIXED_STABLE_TIME
 
 
 if __name__ == '__main__':
@@ -15,11 +16,12 @@ if __name__ == '__main__':
 def calculate_fft(a):
     return np.fft.fft(a, axis=0)
 
+
 # This function is precompiled
 # Updated version of function for real time implementation
 @njit
 # @cc.export('RealTimeFaultIndentification', 'Tuple((u4,f4,f4,f8))(f4[:,:],f4[:,:],f4,f8,f4,i4,i4)')
-def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,gridFreq=None):
+def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zbase=None,sampleFreq=None,gridFreq=None,checkStableTime=None):
 
     Ts = 1/sampleFreq
     wd=(round((1 / gridFreq) / Ts))
@@ -60,20 +62,39 @@ def RealTimeFaultIndentification(Iabc=None,Vabc=None,t=None,minPreviousZ=None,Zb
     if min(Z) < (0.5*Zbase) and indexFaultIncep < 1:
         estFaultIncepTime=t
         indexFaultIncep=indexFaultIncep + 1
-    if minPreviousZ < (1.5*min(Z)) and indexFaultStable < 1 and min(Z) < (0.5*Zbase):
-        estFaultStableTime=t
-        indexFaultStable=indexFaultStable + 1
-        if Zab < (0.5*Zbase) and Zbc < (0.5*Zbase) and Zca < (0.5*Zbase):
-            estFaultType=1
-        else:
-            if Zab < (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca > (0.5*Zbase):
-                estFaultType=2
+        # estFaultStableTime = estFaultIncepTime + fixed_stable_time
+        
+    # Calculate fault stable time
+    if USE_FIXED_STABLE_TIME:
+        if checkStableTime:
+            estFaultStableTime=t
+            indexFaultStable=indexFaultStable + 1
+            if Zab < (0.5*Zbase) and Zbc < (0.5*Zbase) and Zca < (0.5*Zbase):
+                estFaultType=1
             else:
-                if Zab > (0.5*Zbase) and Zbc < (0.5*Zbase) and Zca < (0.5*Zbase):
-                    estFaultType=3
+                if Zab < (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca > (0.5*Zbase):
+                    estFaultType=2
                 else:
-                    if Zab > (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca< (0.5*Zbase):
-                        estFaultType=4
+                    if Zab > (0.5*Zbase) and Zbc < (0.5*Zbase) and Zca < (0.5*Zbase):
+                        estFaultType=3
+                    else:
+                        if Zab > (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca< (0.5*Zbase):
+                            estFaultType=4
+    else:                  
+        if minPreviousZ < (1.5*min(Z)) and indexFaultStable < 1 and min(Z) < (0.5*Zbase):
+            estFaultStableTime=t
+            indexFaultStable=indexFaultStable + 1
+            if Zab < (0.5*Zbase) and Zbc < (0.5*Zbase) and Zca < (0.5*Zbase):
+                estFaultType=1
+            else:
+                if Zab < (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca > (0.5*Zbase):
+                    estFaultType=2
+                else:
+                    if Zab > (0.5*Zbase) and Zbc < (0.5*Zbase) and Zca < (0.5*Zbase):
+                        estFaultType=3
+                    else:
+                        if Zab > (0.5*Zbase) and Zbc > (0.5*Zbase) and Zca< (0.5*Zbase):
+                            estFaultType=4
 
     
     return estFaultType,estFaultIncepTime,estFaultStableTime, min(Z)
