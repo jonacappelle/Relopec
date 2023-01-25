@@ -2,7 +2,7 @@ import numpy as np
 import math
 
 # THIS IS THE CONFIGURATION FILE
-USE_IEC61850_DATA = False
+USE_IEC61850_DATA = True
 USE_SIMULATED_DATA = False
 USE_FIXED_STABLE_TIME = True
 
@@ -11,7 +11,7 @@ USE_FIXED_STABLE_TIME = True
 sampleFreq = 4000 # in Hz
 Ts=1/sampleFreq # in seconds
 
-fixed_stable_time = 160/sampleFreq # 2 periods
+fixed_stable_time = 90/sampleFreq # 2 periods
 
 # GRID SPECIFIC PARAMETERS
 gridFreq=50 # in Hz

@@ -52,7 +52,6 @@ if __name__=="__main__":
     # PART I: Needs to run at 4 kHz continuously
     #########################################################
 
-    print("Start fault detection")
     # Fault detection loop
     while(1):
 
@@ -72,7 +71,8 @@ if __name__=="__main__":
             # print("Divide by zero")
             
         if first:
-            getData.clearBuffers(dataQueue)
+            print("Start fault detection")
+            clearBuffers(dataQueue)
             first = False
         
         if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:

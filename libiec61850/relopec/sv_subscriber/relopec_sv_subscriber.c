@@ -90,7 +90,7 @@ svUpdateListener (SVSubscriber subscriber, void* parameter, SVSubscriber_ASDU as
         // data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 48)/1000.0;      
 
 
-        char str[120];
+        // char str[120];
         // sprintf(str, "%.3f %d\n", data.id, data.id*1000);
         // memset(str, 0, 120);
         // sprintf(str, "x%.2fxa%.2fab%.2fbc%.2fcd%.2fde%.2fef%.2ffg%.2fg\n", data.id, data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);

@@ -16,7 +16,7 @@ if __name__ == '__main__':
 faultDetected = False
 
 # Dataset
-MatlabSimDataSet = scipy.io.loadmat('simulationData/data.mat')
+MatlabSimDataSet = scipy.io.loadmat('simulationData/data2.mat')
 MatlabSimDataSetIndex = 0
 
 # Global variable for printing buffer occupancy
@@ -167,6 +167,8 @@ def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
 
             ID = math.ceil(splitPacket[7])
             # print(f"ID: {ID}")
+
+            # print(f"ID {ID} - V1 {V1} - V2 {V2} - V3 {V3} - I1 {I1} - I2 {I2} - I3 {I3}")
 
             # Only go in here if it is the first time some voltage is on the line
             if first and ( (V1 != 0.0) or (V2 != 0.0) or (V3 != 0.0) or(I1 != 0.0) or (I2 != 0.0) or (I3 != 0.0) ):
