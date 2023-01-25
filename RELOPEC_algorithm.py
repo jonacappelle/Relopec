@@ -46,6 +46,7 @@ if __name__=="__main__":
     estFaultIncepTime_first = True
     checkStableTime = False
     estFaultIncepTime = 0
+    first = True
 
     #########################################################
     # PART I: Needs to run at 4 kHz continuously
@@ -69,6 +70,10 @@ if __name__=="__main__":
             estFaultStableTime = 0
             Z = 0
             # print("Divide by zero")
+            
+        if first:
+            getData.clearBuffers(dataQueue)
+            first = False
         
         if estFaultIncepTime_temp != 0 and estFaultIncepTime_first:
             # Only store estFaultIncepTime's first value

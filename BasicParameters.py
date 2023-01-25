@@ -3,8 +3,8 @@ import math
 
 # THIS IS THE CONFIGURATION FILE
 USE_IEC61850_DATA = False
-USE_SIMULATED_DATA = True
-USE_FIXED_STABLE_TIME = False
+USE_SIMULATED_DATA = False
+USE_FIXED_STABLE_TIME = True
 
 # GENERAL PARAMETERS
 # Sampling frequency of the incoming data

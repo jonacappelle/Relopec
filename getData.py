@@ -22,6 +22,10 @@ MatlabSimDataSetIndex = 0
 # Global variable for printing buffer occupancy
 cnt = 0
 
+def clearBuffers(dataQueue):
+    dataQueue.queue.clear()
+    return
+
 def getData(dataQueue):
 
     # Get data from Queue
