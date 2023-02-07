@@ -6,7 +6,7 @@ from numba import njit, objmode
 import struct
 from multiprocessing.connection import wait
 import random
-from BasicParameters import USE_IEC61850_DATA, USE_SIMULATED_DATA, sampleFreq
+from BasicParameters import USE_IEC61850_DATA, USE_SIMULATED_DATA, sampleFreq, CT_ratio, VT_ratio, ID_ratio
 import math
 
 if __name__ == '__main__':
@@ -157,15 +157,15 @@ def getRealTimeData(startEvent, faultDetectedEvent, dataQueue, idQueue):
 
             t = splitPacket[0] / sampleFreq
 
-            V1 = splitPacket[1]
-            V2 = splitPacket[2]
-            V3 = splitPacket[3]
+            V1 = splitPacket[1] / VT_ratio
+            V2 = splitPacket[2] / VT_ratio
+            V3 = splitPacket[3] / VT_ratio
 
-            I1 = splitPacket[4]
-            I2 = splitPacket[5]
-            I3 = splitPacket[6]
+            I1 = splitPacket[4] / CT_ratio
+            I2 = splitPacket[5] / CT_ratio
+            I3 = splitPacket[6] / CT_ratio
 
-            ID = math.ceil(splitPacket[7])
+            ID = math.ceil(splitPacket[7] / ID_ratio)
             # print(f"ID: {ID}")
 
             # print(f"ID {ID} - V1 {V1} - V2 {V2} - V3 {V3} - I1 {I1} - I2 {I2} - I3 {I3}")

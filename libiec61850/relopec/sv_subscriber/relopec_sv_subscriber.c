@@ -56,54 +56,42 @@ svUpdateListener (SVSubscriber subscriber, void* parameter, SVSubscriber_ASDU as
     data_t data;
     float id;
 
-    // if(firstRun)
-    // {
-    //     // Send ID in first packet
-    //     // TODO make sure that first packet is not a zero
-    //     ID = SVSubscriber_ASDU_getINT32(asdu, 24);
-    //     ID = 777
-    //     firstRun = False
-    //     fwrite(&ID, 1, sizeof(ID), stdout);
-    // }else{
+    uint16_t tempTime = SVSubscriber_ASDU_getSmpCnt(asdu);
 
-        uint16_t tempTime = SVSubscriber_ASDU_getSmpCnt(asdu);
+    // Handle overflows
+    actualTime = (uint64_t) tempTime + (overflowCnt * TIME_OVERFLOW_CNT);
+    if( tempTime > TIME_OVERFLOW_CNT-1 )
+    {
+        overflowCnt++;
+    }
 
-        // Handle overflows
-        actualTime = (uint64_t) tempTime + (overflowCnt * TIME_OVERFLOW_CNT);
-        if( tempTime > TIME_OVERFLOW_CNT-1 )
-        {
-            overflowCnt++;
-        }
+    data.t = actualTime;
 
-        data.t = actualTime;
-        
-        data.I1 = (float) SVSubscriber_ASDU_getINT32(asdu, 0)/1000.0/10.0;
-        data.I2 = (float) SVSubscriber_ASDU_getINT32(asdu, 8)/1000.0/10.0;
-        data.I3 = (float) SVSubscriber_ASDU_getINT32(asdu, 16)/1000.0/10.0;
+    uint32_t size = SVSubscriber_ASDU_getDataSize(asdu);
+    
+    data.I1 = (float) SVSubscriber_ASDU_getINT32(asdu, 0);
+    data.I2 = (float) SVSubscriber_ASDU_getINT32(asdu, 8);
+    data.I3 = (float) SVSubscriber_ASDU_getINT32(asdu, 16);
 
-        data.id = (float) SVSubscriber_ASDU_getINT32(asdu, 24)/1000.0/10.0;
+    data.id = (float) SVSubscriber_ASDU_getINT32(asdu, 24);
 
-        data.V1 = (float) SVSubscriber_ASDU_getINT32(asdu, 32)/1000.0;
-        data.V2 = (float) SVSubscriber_ASDU_getINT32(asdu, 40)/1000.0;
-        data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 48)/1000.0;   
-
-        // data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 48)/1000.0;      
+    data.V1 = (float) SVSubscriber_ASDU_getINT32(asdu, 32);
+    data.V2 = (float) SVSubscriber_ASDU_getINT32(asdu, 40);
+    data.V3 = (float) SVSubscriber_ASDU_getINT32(asdu, 48); 
 
 
-        // char str[120];
-        // sprintf(str, "%.3f %d\n", data.id, data.id*1000);
-        // memset(str, 0, 120);
-        // sprintf(str, "x%.2fxa%.2fab%.2fbc%.2fcd%.2fde%.2fef%.2ffg%.2fg\n", data.id, data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
-        // sprintf(str, "%" PRIu64 " %.2f %.2f %.2f %.2f %.2f %.2f %d sizeofdata %d\n--------------------------------------------", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3, data.id, sizeof(data));
-        // sprintf(str, "%" PRIu64 " sizeofdata %d %d %d \n--------------------------------------------", data.t, (int) sizeof(data), (int) sizeof(data.id), (int) sizeof(data.t));
+    // char str[120];
+    // sprintf(str, "%.3f %d\n", data.id, data.id*1000);
+    // memset(str, 0, 120);
+    // sprintf(str, "x%.2fxy%dya%.2fab%.2fbc%.2fcd%.2fde%.2fef%.2ffg%.2fg\n", data.id, size, data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3);
+    // sprintf(str, "%" PRIu64 " %.2f %.2f %.2f %.2f %.2f %.2f %d sizeofdata %d\n--------------------------------------------", data.t, data.V1, data.V2, data.V3, data.I1, data.I2, data.I3, data.id, sizeof(data));
+    // sprintf(str, "%" PRIu64 " sizeofdata %d %d %d \n--------------------------------------------", data.t, (int) sizeof(data), (int) sizeof(data.id), (int) sizeof(data.t));
 
-        // sprintf(str, "tempTime: %0.2f - time: %0.2f - overflowcnt: %0.2f\n----------------------------------------------------", (float) tempTime, data.t, (float) overflowCnt);
+    // Write to Python
+    fwrite(&data, 1, sizeof(data), stdout);
+    // fwrite(&str, 1, 120, stdout);
 
-        // Write to Python
-        fwrite(&data, 1, sizeof(data), stdout);
-        // fwrite(&str, 1, 120, stdout);
-
-        // Format description: https://www.typhoon-hil.com/documentation/typhoon-hil-software-manual/References/iec_61850_sampled_values_protocol.html
+    // Format description: https://www.typhoon-hil.com/documentation/typhoon-hil-software-manual/References/iec_61850_sampled_values_protocol.html
     // }
 }
 
