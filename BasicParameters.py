@@ -4,7 +4,7 @@ import math
 # THIS IS THE CONFIGURATION FILE
 USE_IEC61850_DATA = True
 USE_SIMULATED_DATA = False
-USE_FIXED_STABLE_TIME = False
+USE_FIXED_STABLE_TIME = True
 
 # GENERAL PARAMETERS
 # Sampling frequency of the incoming data
@@ -14,7 +14,7 @@ CT_ratio = 10000
 VT_ratio = 1000
 ID_ratio = 10000
 
-fixed_stable_time = 90/sampleFreq # 2 periods
+fixed_stable_time = 120/sampleFreq # 1.5 periods
 
 # GRID SPECIFIC PARAMETERS
 gridFreq=50 # in Hz
