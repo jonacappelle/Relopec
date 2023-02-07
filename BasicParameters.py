@@ -10,9 +10,9 @@ USE_FIXED_STABLE_TIME = True
 # Sampling frequency of the incoming data
 sampleFreq = 4000 # in Hz
 Ts=1/sampleFreq # in seconds
-CT_ratio = 10000
+CT_ratio = 1000
 VT_ratio = 1000
-ID_ratio = 10000
+ID_ratio = 1000
 
 fixed_stable_time = 120/sampleFreq # 1.5 periods
 
